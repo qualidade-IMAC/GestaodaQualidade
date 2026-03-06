@@ -1,586 +1,1381 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IMAC - Gestão de Gratificação</title>
-    <!-- Tailwind CSS para estilização rápida -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestão de Gratificações</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- jsPDF para relatórios -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- SheetJS para Leitura de Planilhas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         
-        :root {
-            --imac-yellow: #EAB308;
-            --ios-bg: #F2F2F7;
+        /* Loader */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
         }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--ios-bg);
-            -webkit-tap-highlight-color: transparent;
+        /* iOS Style Print/PDF Configuration */
+        @media print {
+            @page { margin: 15mm; }
+            body { 
+                background-color: white !important; 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact; 
+            }
+            aside, .no-print, #mobile-menu, .mobile-header, #login-screen { 
+                display: none !important; 
+            }
+            #app-layout {
+                display: block !important;
+            }
+            main { 
+                padding: 0 !important; 
+                margin: 0 !important; 
+                overflow: visible !important; 
+                background-color: white !important;
+            }
+            #app-container {
+                padding: 0 !important;
+            }
+            .print-card { 
+                border-radius: 18px !important; 
+                border: 1px solid #d1d5db !important; 
+                padding: 24px !important; 
+                box-shadow: none !important;
+                background-color: white !important;
+            }
+            .print-header { 
+                display: flex !important; 
+                justify-content: space-between !important; 
+                align-items: center !important; 
+                border-bottom: 2px solid #f3f4f6 !important; 
+                padding-bottom: 16px !important; 
+                margin-bottom: 24px !important; 
+            }
+            .print-logo { 
+                max-height: 55px !important; 
+                border-radius: 12px !important; 
+                object-fit: contain;
+            }
+            .page-break-avoid {
+                page-break-inside: avoid;
+            }
+            table { border-collapse: collapse !important; width: 100% !important; }
+            th { background-color: #f9fafb !important; color: #374151 !important; border-bottom: 2px solid #e5e7eb !important; }
+            td { border-bottom: 1px solid #f3f4f6 !important; }
         }
-
-        .ios-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        }
-
-        .tab-active {
-            color: var(--imac-yellow);
-            transform: scale(1.1);
-        }
-
-        /* Estilização da barra de rolagem */
-        ::-webkit-scrollbar { width: 0px; }
-
-        .modal-enter { animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp {
-            from { transform: translateY(100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .calendar-day.has-irr {
-            border: 2px solid #fee2e2;
-            color: #ef4444;
-            background-color: #fef2f2;
-        }
-
-        .btn-press:active { transform: scale(0.95); }
     </style>
-</head>
-<body class="pb-24">
 
-    <!-- Header Principal -->
-    <header id="main-header" class="bg-[#EAB308] pt-12 pb-8 px-6 rounded-b-[40px] shadow-lg relative overflow-hidden text-white">
-        <div class="flex justify-between items-center mb-6">
-            <div class="flex items-center gap-3">
-                <div id="logo-container" class="w-12 h-12 bg-white rounded-xl flex items-center justify-center overflow-hidden p-1">
-                    <span class="font-bold text-yellow-600 text-xs">IMAC</span>
-                </div>
-                <div>
-                    <h1 class="font-bold text-xl leading-none">Controle de Qualidade</h1>
-                    <p class="text-yellow-100 text-[10px] opacity-80 uppercase tracking-widest mt-1">Gratificação Mensal</p>
-                </div>
-            </div>
-            <button onclick="switchTab('settings')" class="bg-white/20 p-2 rounded-full backdrop-blur-md">
-                <i data-lucide="settings" class="w-5 h-5"></i>
-            </button>
-        </div>
-
-        <div class="bg-white/95 backdrop-blur-sm rounded-3xl p-5 shadow-sm text-gray-800">
-            <div class="flex justify-between items-end mb-2">
-                <span class="text-gray-500 font-medium text-xs uppercase tracking-tighter">Status da Fábrica</span>
-                <span id="global-progress" class="text-[#EAB308] font-bold text-2xl">0%</span>
-            </div>
-            <div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
-                <div id="progress-bar" class="bg-[#EAB308] h-full rounded-full transition-all duration-700" style="width: 0%"></div>
-            </div>
-            <p id="sector-count" class="text-[9px] text-gray-400 mt-2 text-right uppercase font-bold">0 setores verificados</p>
-        </div>
-    </header>
-
-    <!-- Conteúdo Principal -->
-    <main id="app-content" class="mt-4 px-4">
-        <!-- Dashboard View (Default) -->
-        <div id="view-dashboard" class="view hidden space-y-6">
-            <section>
-                <h2 class="text-gray-900 font-bold text-lg mb-4 ml-1">Setores</h2>
-                <div id="sectors-list" class="grid gap-4">
-                    <!-- Gerado via JS -->
-                </div>
-            </section>
-        </div>
-
-        <!-- Equipe View -->
-        <div id="view-employees" class="view hidden space-y-6">
-            <div class="flex justify-between items-center">
-                <h2 class="text-xl font-bold text-gray-900">Colaboradores</h2>
-                <button onclick="openModal('employee-modal')" class="bg-[#EAB308] text-white p-2 rounded-xl shadow-md btn-press">
-                    <i data-lucide="user-plus" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <div id="employees-list" class="space-y-4">
-                <!-- Gerado via JS -->
-            </div>
-        </div>
-
-        <!-- Calendário View -->
-        <div id="view-history" class="view hidden space-y-6">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-bold text-gray-900">Irregularidades</h2>
-                <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl shadow-sm">
-                    <button onclick="changeMonth(-1)" class="text-gray-400"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                    <span id="current-month-display" class="text-xs font-bold uppercase w-24 text-center">Janeiro 2024</span>
-                    <button onclick="changeMonth(1)" class="text-gray-400"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-                </div>
-            </div>
-            
-            <div id="calendar-grid" class="grid grid-cols-7 gap-2 bg-white p-4 rounded-3xl shadow-sm">
-                <!-- Gerado via JS -->
-            </div>
-
-            <div class="space-y-3">
-                <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Registros no Mês</h3>
-                <div id="month-irregularities" class="space-y-3">
-                    <!-- Gerado via JS -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Configurações View -->
-        <div id="view-settings" class="view hidden space-y-8">
-            <section class="bg-white rounded-3xl p-6 shadow-sm space-y-6">
-                <h2 class="text-lg font-bold">Customização</h2>
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Logo da Empresa</label>
-                    <div class="flex items-center gap-4">
-                        <div id="logo-preview" class="w-16 h-16 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
-                            <i data-lucide="image" class="text-gray-300"></i>
-                        </div>
-                        <input type="file" id="logo-input" class="hidden" accept="image/*" onchange="handleLogo(event)">
-                        <label for="logo-input" class="bg-[#EAB308] text-white px-4 py-2 rounded-xl text-xs font-bold cursor-pointer btn-press">Upload Logo</label>
-                    </div>
-                </div>
-                <button onclick="exportPDF()" class="w-full bg-black text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 btn-press">
-                    <i data-lucide="download" class="w-5 h-5"></i> Exportar PDF
-                </button>
-            </section>
-
-            <section class="space-y-4">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-lg font-bold">Gestão de Setores</h2>
-                    <button onclick="addNewSector()" class="text-[#EAB308]"><i data-lucide="plus-circle"></i></button>
-                </div>
-                <div id="settings-sectors-list" class="space-y-3"></div>
-            </section>
-
-            <section class="space-y-4 pb-12">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-lg font-bold">Critérios de Desconto</h2>
-                    <button onclick="addNewCriterion()" class="text-[#EAB308]"><i data-lucide="plus-circle"></i></button>
-                </div>
-                <div id="settings-criteria-list" class="space-y-3"></div>
-            </section>
-        </div>
-    </main>
-
-    <!-- Barra de Navegação -->
-    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md bg-white/80 backdrop-blur-xl border border-white/20 rounded-[30px] h-18 shadow-2xl z-40 flex items-center justify-around px-4 py-3">
-        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center gap-1 text-gray-400 transition-all">
-            <i data-lucide="layout-grid" class="w-6 h-6"></i>
-            <span class="text-[9px] font-bold uppercase">Início</span>
-        </button>
-        <button onclick="switchTab('employees')" id="nav-employees" class="flex flex-col items-center gap-1 text-gray-400 transition-all">
-            <i data-lucide="users" class="w-6 h-6"></i>
-            <span class="text-[9px] font-bold uppercase">Equipe</span>
-        </button>
-        <div class="relative -top-6">
-            <button onclick="openIrregularityModal()" class="bg-[#EAB308] text-white p-4 rounded-full shadow-lg btn-press border-4 border-[#F2F2F7]">
-                <i data-lucide="plus" class="w-8 h-8"></i>
-            </button>
-        </div>
-        <button onclick="switchTab('history')" id="nav-history" class="flex flex-col items-center gap-1 text-gray-400 transition-all">
-            <i data-lucide="calendar" class="w-6 h-6"></i>
-            <span class="text-[9px] font-bold uppercase">Histórico</span>
-        </button>
-        <button onclick="switchTab('settings')" id="nav-settings" class="flex flex-col items-center gap-1 text-gray-400 transition-all">
-            <i data-lucide="file-text" class="w-6 h-6"></i>
-            <span class="text-[9px] font-bold uppercase">Config</span>
-        </button>
-    </nav>
-
-    <!-- Modais -->
-    <div id="employee-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center">
-        <div class="bg-white w-full max-w-md rounded-t-[40px] sm:rounded-[40px] p-8 modal-enter">
-            <h2 class="text-2xl font-bold mb-6">Novo Colaborador</h2>
-            <div class="space-y-4">
-                <input id="new-emp-name" placeholder="Nome completo" class="w-full bg-gray-50 border-none rounded-2xl p-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <select id="new-emp-sector" class="bg-gray-50 border-none rounded-2xl p-4 text-sm"></select>
-                    <select id="new-emp-role" class="bg-gray-50 border-none rounded-2xl p-4 text-sm">
-                        <option value="liderado">Liderado</option>
-                        <option value="lider">Líder</option>
-                    </select>
-                </div>
-                <input id="new-emp-date" type="date" class="w-full bg-gray-50 border-none rounded-2xl p-4">
-                <div class="flex gap-4 pt-4">
-                    <button onclick="closeModal('employee-modal')" class="flex-1 font-bold text-gray-400">Cancelar</button>
-                    <button onclick="saveEmployee()" class="flex-[2] bg-[#EAB308] text-white py-4 rounded-2xl font-bold btn-press">Salvar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="irr-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center">
-        <div class="bg-white w-full max-w-md rounded-t-[40px] sm:rounded-[40px] p-8 modal-enter">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold">Nova Ocorrência</h2>
-                <span id="irr-date-display" class="text-xs font-bold text-[#EAB308] bg-yellow-50 px-3 py-1 rounded-full">--/--/--</span>
-            </div>
-            <div class="space-y-4">
-                <select id="irr-emp" class="w-full bg-gray-50 border-none rounded-2xl p-4"></select>
-                <select id="irr-crit" class="w-full bg-gray-50 border-none rounded-2xl p-4"></select>
-                <textarea id="irr-desc" placeholder="Detalhes da irregularidade..." class="w-full bg-gray-50 border-none rounded-2xl p-4 h-24 resize-none"></textarea>
-                <div class="flex gap-4 pt-4">
-                    <button onclick="closeModal('irr-modal')" class="flex-1 font-bold text-gray-400">Voltar</button>
-                    <button onclick="saveIrregularity()" class="flex-[2] bg-red-500 text-white py-4 rounded-2xl font-bold btn-press">Registrar Desconto</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <!-- PWA Setup Dinâmico -->
     <script>
-        // --- Estado Inicial ---
-        let state = {
-            employees: JSON.parse(localStorage.getItem('imac_employees')) || [],
-            sectors: JSON.parse(localStorage.getItem('imac_sectors')) || [
-                { id: '1', name: 'Banheiro Feminino', checklist: 100, spreadsheet: 'ok' },
-                { id: '2', name: 'Banheiro Masculino', checklist: 100, spreadsheet: 'ok' }
-            ],
-            criteria: JSON.parse(localStorage.getItem('imac_criteria')) || [
-                { id: '1', name: 'Uso de EPI', percentage: 10 },
-                { id: '2', name: 'Limpeza de Bancada', percentage: 5 }
-            ],
-            irregularities: JSON.parse(localStorage.getItem('imac_irregularities')) || [],
-            config: JSON.parse(localStorage.getItem('imac_config')) || { logo: '' },
-            currentViewDate: new Date(),
-            activeTab: 'dashboard' // Definindo a aba ativa inicial
+        const manifestData = {
+            name: "Gestão de Gratificações",
+            short_name: "Gratificações",
+            start_url: ".",
+            display: "standalone",
+            background_color: "#ffffff",
+            theme_color: "#3b82f6",
+            icons: [{
+                src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath fill='%233b82f6' d='M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z'/%3E%3C/svg%3E",
+                sizes: "512x512",
+                type: "image/svg+xml",
+                purpose: "any maskable"
+            }]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+        const manifestUrl = URL.createObjectURL(manifestBlob);
+        document.write(`<link rel="manifest" href="${manifestUrl}">`);
+    </script>
+</head>
+<body class="h-screen w-screen overflow-hidden text-gray-800 bg-slate-50 relative">
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
+        <div class="loader mb-4"></div>
+        <h2 class="text-xl font-semibold text-gray-700">Verificando Autenticação...</h2>
+    </div>
+
+    <!-- Tela de Login -->
+    <div id="login-screen" class="hidden fixed inset-0 z-40 bg-slate-900 flex-col items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 md:p-12 max-w-md w-full text-center animate-[fadeIn_0.4s_ease-out]">
+            <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fa-solid fa-hand-holding-dollar text-4xl text-blue-600"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">Gestão de Gratificações</h1>
+            <p class="text-gray-500 mb-8 text-sm">Faça login com sua conta para acessar o painel administrativo.</p>
+            
+            <button onclick="app.loginWithGoogle()" class="w-full bg-white border-2 border-gray-200 hover:bg-gray-50 text-gray-700 font-bold py-3.5 px-4 rounded-xl shadow-sm transition-colors flex items-center justify-center space-x-3 mb-6">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-6 h-6" alt="Google">
+                <span>Entrar com Google</span>
+            </button>
+
+            <button onclick="app.loginAnonymously()" class="text-gray-400 hover:text-gray-600 text-xs font-medium underline transition-colors">
+                Entrar como Visitante (Modo Teste)
+            </button>
+        </div>
+        <p class="text-slate-500 text-xs mt-8 text-center max-w-xs">App Seguro Firebase &copy; 2026</p>
+    </div>
+
+    <!-- Layout Principal do App (Oculto até o login) -->
+    <div id="app-layout" class="hidden h-full w-full flex overflow-hidden">
+        
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-xl z-20 hidden md:flex h-full no-print">
+            <div class="p-6 border-b border-slate-700 flex items-center space-x-3">
+                <i class="fa-solid fa-hand-holding-dollar text-2xl text-blue-400"></i>
+                <h1 class="text-lg font-bold leading-tight">Gestão de<br><span class="text-blue-400">Gratificações</span></h1>
+            </div>
+            <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto hide-scroll flex flex-col">
+                <button onclick="app.navigate('dashboard')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-blue-600 text-white transition-colors" data-view="dashboard">
+                    <i class="fa-solid fa-chart-pie w-5"></i><span>Dashboard</span>
+                </button>
+                <button onclick="app.navigate('colaboradores')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors" data-view="colaboradores">
+                    <i class="fa-solid fa-users w-5"></i><span>Colaboradores</span>
+                </button>
+                <button onclick="app.navigate('setores')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors" data-view="setores">
+                    <i class="fa-solid fa-sitemap w-5"></i><span>Setores & Regras</span>
+                </button>
+                <button onclick="app.navigate('lancamentos')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors" data-view="lancamentos">
+                    <i class="fa-solid fa-clipboard-list w-5"></i><span>Lançar Erros / Faltas</span>
+                </button>
+                <button onclick="app.navigate('higiene')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors" data-view="higiene">
+                    <i class="fa-solid fa-hands-bubbles w-5"></i><span>Higiene Pessoal</span>
+                </button>
+                <button onclick="app.navigate('proporcionais')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors" data-view="proporcionais">
+                    <i class="fa-solid fa-calendar-day w-5"></i><span>Férias & Admissões</span>
+                </button>
+                <button onclick="app.navigate('relatorios')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors" data-view="relatorios">
+                    <i class="fa-solid fa-file-invoice-dollar w-5"></i><span>Relatórios (RH)</span>
+                </button>
+                <button onclick="app.navigate('configuracoes')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors" data-view="configuracoes">
+                    <i class="fa-solid fa-cog w-5"></i><span>Configurações</span>
+                </button>
+
+                <div class="mt-auto pt-4 border-t border-slate-700">
+                    <button onclick="app.logout()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition-colors">
+                        <i class="fa-solid fa-arrow-right-from-bracket w-5"></i><span>Sair do Sistema</span>
+                    </button>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Mobile Header -->
+        <div class="mobile-header md:hidden fixed top-0 w-full bg-slate-900 text-white p-4 flex justify-between items-center z-30 shadow-md no-print">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-hand-holding-dollar text-xl text-blue-400"></i>
+                <h1 class="font-bold">Gratificações</h1>
+            </div>
+            <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="text-2xl">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Menu Overlay -->
+        <div id="mobile-menu" class="hidden md:hidden fixed inset-0 bg-slate-900 z-40 flex flex-col pt-16 no-print overflow-y-auto">
+            <button onclick="document.getElementById('mobile-menu').classList.add('hidden')" class="absolute top-4 right-4 text-3xl text-white">
+                <i class="fa-solid fa-times"></i>
+            </button>
+            <nav class="flex flex-col p-6 space-y-4 text-lg text-slate-300">
+                <a href="#" onclick="app.navigate('dashboard'); document.getElementById('mobile-menu').classList.add('hidden')"><i class="fa-solid fa-chart-pie mr-3 w-6"></i> Dashboard</a>
+                <a href="#" onclick="app.navigate('colaboradores'); document.getElementById('mobile-menu').classList.add('hidden')"><i class="fa-solid fa-users mr-3 w-6"></i> Colaboradores</a>
+                <a href="#" onclick="app.navigate('setores'); document.getElementById('mobile-menu').classList.add('hidden')"><i class="fa-solid fa-sitemap mr-3 w-6"></i> Setores & Regras</a>
+                <a href="#" onclick="app.navigate('lancamentos'); document.getElementById('mobile-menu').classList.add('hidden')"><i class="fa-solid fa-clipboard-list mr-3 w-6"></i> Lançamentos</a>
+                <a href="#" onclick="app.navigate('higiene'); document.getElementById('mobile-menu').classList.add('hidden')"><i class="fa-solid fa-hands-bubbles mr-3 w-6"></i> Higiene Pessoal</a>
+                <a href="#" onclick="app.navigate('proporcionais'); document.getElementById('mobile-menu').classList.add('hidden')"><i class="fa-solid fa-calendar-day mr-3 w-6"></i> Férias & Admissões</a>
+                <a href="#" onclick="app.navigate('relatorios'); document.getElementById('mobile-menu').classList.add('hidden')"><i class="fa-solid fa-file-invoice-dollar mr-3 w-6"></i> Relatórios</a>
+                <a href="#" onclick="app.navigate('configuracoes'); document.getElementById('mobile-menu').classList.add('hidden')"><i class="fa-solid fa-cog mr-3 w-6"></i> Configurações</a>
+                
+                <a href="#" onclick="app.logout(); document.getElementById('mobile-menu').classList.add('hidden')" class="text-red-400 mt-6 border-t border-slate-700 pt-6"><i class="fa-solid fa-arrow-right-from-bracket mr-3 w-6"></i> Sair do Sistema</a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <main class="flex-1 h-full bg-slate-50 overflow-y-auto pt-16 md:pt-0 relative">
+            <div class="p-4 md:p-8 max-w-7xl mx-auto pb-24" id="app-container">
+                <!-- Content Injected via JS -->
+            </div>
+        </main>
+        
+    </div>
+
+    <!-- Modals Container -->
+    <div id="modals" class="no-print"></div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, onSnapshot, doc, setDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global State
+        const state = {
+            view: 'dashboard',
+            reportTab: 'fechamento', 
+            user: null,
+            settings: { logo: '' },
+            employees: [],
+            sectors: [],
+            logs: [],
+            prorations: [],
+            hygieneChecks: [],
+            rules: [
+                { id: 'produtividade', name: 'Produtividade', pct: 0.20, max: 1 },
+                { id: 'qualidade', name: 'Qualidade do Produto', pct: 0.05, max: 3 },
+                { id: 'pontualidade', name: 'Pontualidade/Assiduidade', pct: 0.05, max: 3 },
+                { id: 'procedimentos', name: 'Cumprimento de Procedimentos', pct: 0.0333, max: 3 },
+                { id: 'colaboracao', name: 'Colaboração/Trabalho em Equipe', pct: 0.0333, max: 3 },
+                { id: 'perdas', name: 'Perdas e Desperdícios', pct: 0.0333, max: 3 },
+                { id: 'auditoria', name: 'Auditoria BPF', pct: 0.10, max: 1 },
+                { id: 'seguranca', name: 'Segurança no Trabalho', pct: 0.05, max: 1 },
+                { id: 'dds', name: 'Participação DDS, Reuniões', pct: 0.05, max: 1 },
+            ]
         };
 
-        function saveState() {
-            localStorage.setItem('imac_employees', JSON.stringify(state.employees));
-            localStorage.setItem('imac_sectors', JSON.stringify(state.sectors));
-            localStorage.setItem('imac_criteria', JSON.stringify(state.criteria));
-            localStorage.setItem('imac_irregularities', JSON.stringify(state.irregularities));
-            localStorage.setItem('imac_config', JSON.stringify(state.config));
-            render();
-        }
+        let db, auth, appId, unsubscribeFuncs = [];
 
-        // --- Navegação ---
-        function switchTab(tabId) {
-            state.activeTab = tabId; // Atualizando o estado da aba
-            document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-            document.getElementById('view-' + tabId).classList.remove('hidden');
-            
-            document.querySelectorAll('nav button').forEach(b => b.classList.remove('tab-active', 'text-[#EAB308]'));
-            document.getElementById('nav-' + tabId).classList.add('tab-active', 'text-[#EAB308]');
-            
-            if (tabId === 'history') renderCalendar();
-            lucide.createIcons();
-        }
+        // App Initializer
+        const initFirebase = async () => {
+            try {
+                // User provided configuration as Default
+                const defaultFirebaseConfig = {
+                    apiKey: "AIzaSyAACkZnNeizzXIfH0cS1WZWCITD0scqpJY",
+                    authDomain: "gratificacao-2e6e8.firebaseapp.com",
+                    projectId: "gratificacao-2e6e8",
+                    storageBucket: "gratificacao-2e6e8.firebasestorage.app",
+                    messagingSenderId: "843644337269",
+                    appId: "1:843644337269:web:36c4bfb09a19f9f0a44c3c",
+                    measurementId: "G-66CCNYZEN0"
+                };
 
-        // --- Modais ---
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : defaultFirebaseConfig;
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'gestao-grat-app';
+                
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
 
-        // --- Lógica de Negócio ---
-        function calculateGratification(emp) {
-            if (emp.status === 'vacation' || emp.status === 'warning') return 0;
-            
-            let total = 100;
-            const sector = state.sectors.find(s => s.id === emp.sectorId);
-            
-            // Penalidade Setorial (Coletiva)
-            if (sector) {
-                if (sector.checklist < 85 || sector.spreadsheet !== 'ok') {
-                    total -= 20; 
+                // Check for dynamic environment tokens (Canvas preview support)
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
                 }
+
+                // Auth State Listener (Controls Screen visibility)
+                onAuthStateChanged(auth, (user) => {
+                    const loader = document.getElementById('loading-overlay');
+                    const loginScreen = document.getElementById('login-screen');
+                    const appLayout = document.getElementById('app-layout');
+
+                    loader.classList.add('hidden');
+
+                    if (user) {
+                        state.user = user;
+                        loginScreen.classList.add('hidden');
+                        loginScreen.classList.remove('flex');
+                        appLayout.classList.remove('hidden');
+                        setupListeners();
+                    } else {
+                        state.user = null;
+                        appLayout.classList.add('hidden');
+                        loginScreen.classList.remove('hidden');
+                        loginScreen.classList.add('flex');
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase init error:", error);
+                document.getElementById('loading-overlay').classList.add('hidden');
+                alert("Erro crítico ao inicializar o Firebase. Verifique a configuração.");
             }
+        };
 
-            // Penalidades Individuais (Mês atual)
-            const monthStr = state.currentViewDate.toISOString().slice(0, 7);
-            const irrs = state.irregularities.filter(i => i.empId === emp.id && i.date.startsWith(monthStr));
-            irrs.forEach(irr => {
-                const crit = state.criteria.find(c => c.id === irr.critId);
-                if (crit) total -= crit.percentage;
-            });
+        const setupListeners = () => {
+            unsubscribeFuncs.forEach(unsub => unsub());
+            const publicPath = `artifacts/${appId}/public/data`;
+            
+            // Settings Listener
+            unsubscribeFuncs.push(onSnapshot(doc(db, `${publicPath}/settings`, 'main'), (docSnap) => {
+                if (docSnap.exists()) {
+                    state.settings = docSnap.data();
+                }
+                if(state.view === 'configuracoes' || state.view === 'relatorios') window.app.render();
+            }, (e) => console.error(e)));
 
-            // Pro-rata
-            const hireDate = new Date(emp.hireDate);
-            const now = new Date();
-            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-            if (hireDate > firstDay) {
-                const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-                const daysWorked = daysInMonth - hireDate.getDate() + 1;
-                total = (total * (daysWorked / daysInMonth));
+            // Employees
+            unsubscribeFuncs.push(onSnapshot(query(collection(db, `${publicPath}/employees`)), (snap) => {
+                state.employees = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                window.app.render();
+            }, (e) => console.error(e)));
+
+            // Sectors
+            unsubscribeFuncs.push(onSnapshot(query(collection(db, `${publicPath}/sectors`)), (snap) => {
+                state.sectors = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if(state.sectors.length === 0) populateInitialSectors();
+                window.app.render();
+            }, (e) => console.error(e)));
+
+            // Logs (Errors)
+            unsubscribeFuncs.push(onSnapshot(query(collection(db, `${publicPath}/logs`)), (snap) => {
+                state.logs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                window.app.render();
+            }, (e) => console.error(e)));
+
+            // Prorations
+            unsubscribeFuncs.push(onSnapshot(query(collection(db, `${publicPath}/prorations`)), (snap) => {
+                state.prorations = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                window.app.render();
+            }, (e) => console.error(e)));
+
+            // Hygiene Checks
+            unsubscribeFuncs.push(onSnapshot(query(collection(db, `${publicPath}/hygiene_checks`)), (snap) => {
+                state.hygieneChecks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (state.view === 'higiene') window.app.render();
+            }, (e) => console.error(e)));
+        };
+
+        const populateInitialSectors = async () => {
+            const initial = [
+                { id: 'salgado', name: 'Salgado', val_liderado: 180, val_lider: 250 },
+                { id: 'ped', name: 'P&D', val_liderado: 180, val_lider: 250 },
+                { id: 'expedicao_dia', name: 'Expedição Dia', val_liderado: 180, val_lider: 250 },
+                { id: 'expedicao_noite', name: 'Expedição Noite', val_liderado: 180, val_lider: 250 }
+            ];
+            for (let sec of initial) {
+                await setDoc(doc(db, `artifacts/${appId}/public/data/sectors`, sec.id), sec);
             }
+        };
 
-            return Math.max(0, total).toFixed(1);
-        }
+        // --- Helpers ---
+        const formatBRL = (val) => Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const formatPct = (val) => (Number(val) * 100).toFixed(2) + '%';
+        const getMonthId = (dateObj) => `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
+        
+        // --- Core Application Logic Object ---
+        window.app = {
+            generateId: () => {
+                return typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' 
+                    ? crypto.randomUUID() 
+                    : Date.now().toString(36) + Math.random().toString(36).substring(2);
+            },
 
-        // --- Renderização ---
-        function render() {
-            // Dashboard
-            const sectorsList = document.getElementById('sectors-list');
-            sectorsList.innerHTML = state.sectors.map(s => `
-                <div class="ios-card p-4 flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <div class="bg-yellow-50 p-3 rounded-xl text-[#EAB308]"><i data-lucide="percent" class="w-5 h-5"></i></div>
-                        <div>
-                            <h3 class="font-bold text-xs uppercase tracking-wide">${s.name}</h3>
-                            <div class="flex gap-2 mt-1">
-                                <span class="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${s.checklist >= 85 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">Check: ${s.checklist}%</span>
-                                <span class="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${s.spreadsheet === 'ok' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">Planilha: ${s.spreadsheet.toUpperCase()}</span>
-                            </div>
+            toast: (msg, type = 'info') => {
+                const colors = { success: 'bg-emerald-500', error: 'bg-red-500', info: 'bg-blue-500' };
+                const icon = { success: 'fa-check-circle', error: 'fa-triangle-exclamation', info: 'fa-info-circle' };
+                const div = document.createElement('div');
+                div.className = `fixed bottom-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-xl shadow-lg flex items-center space-x-3 z-50 transition-opacity duration-300`;
+                div.innerHTML = `<i class="fa-solid ${icon[type]} text-xl"></i><span class="font-medium">${msg}</span>`;
+                document.body.appendChild(div);
+                setTimeout(() => div.classList.add('opacity-0'), 2500);
+                setTimeout(() => div.remove(), 2800);
+            },
+
+            confirmAction: (msg, actionStr) => {
+                app.openModal(`
+                    <div class="p-6 text-center">
+                        <i class="fa-solid fa-circle-exclamation text-5xl text-red-500 mb-4"></i>
+                        <p class="text-lg text-gray-800 font-medium mb-6 mt-4">${msg}</p>
+                        <div class="flex justify-center space-x-4">
+                            <button onclick="app.closeModal()" class="px-5 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200">Cancelar</button>
+                            <button onclick="${actionStr}; app.closeModal()" class="px-5 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 shadow-sm">Confirmar</button>
                         </div>
                     </div>
-                    <i data-lucide="chevron-right" class="text-gray-300 w-5 h-5"></i>
-                </div>
-            `).join('');
+                `);
+            },
 
-            // Equipe
-            const empList = document.getElementById('employees-list');
-            empList.innerHTML = state.employees.map(e => `
-                <div class="ios-card p-5">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="flex gap-3">
-                            <div class="w-12 h-12 rounded-2xl bg-yellow-50 text-[#EAB308] flex items-center justify-center font-bold text-lg">
-                                ${e.name.charAt(0)}
+            // --- AUTH LOGIC ---
+            loginWithGoogle: async () => {
+                const provider = new GoogleAuthProvider();
+                try {
+                    await signInWithPopup(auth, provider);
+                    app.toast("Login realizado com sucesso!", "success");
+                } catch (error) {
+                    console.error("Erro no login Google:", error);
+                    app.toast("Falha na autenticação: " + error.message, "error");
+                }
+            },
+
+            loginAnonymously: async () => {
+                try {
+                    app.toast("Entrando no modo teste...", "info");
+                    await signInAnonymously(auth);
+                } catch (error) {
+                    console.error("Erro login anônimo:", error);
+                    app.toast("Falha na autenticação anônima.", "error");
+                }
+            },
+
+            logout: async () => {
+                try {
+                    await signOut(auth);
+                    window.location.reload();
+                } catch (error) {
+                    console.error("Erro ao sair:", error);
+                    app.toast("Erro ao desconectar.", "error");
+                }
+            },
+
+            navigate: (view) => {
+                state.view = view;
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    if (btn.dataset.view === view) {
+                        btn.classList.remove('text-slate-300', 'hover:bg-slate-800');
+                        btn.classList.add('bg-blue-600', 'text-white');
+                    } else {
+                        btn.classList.add('text-slate-300', 'hover:bg-slate-800');
+                        btn.classList.remove('bg-blue-600', 'text-white');
+                    }
+                });
+                app.render();
+            },
+
+            setReportTab: (tab) => {
+                state.reportTab = tab;
+                app.render();
+            },
+
+            render: () => {
+                const container = document.getElementById('app-container');
+                switch (state.view) {
+                    case 'dashboard': container.innerHTML = app.views.dashboard(); break;
+                    case 'colaboradores': container.innerHTML = app.views.colaboradores(); break;
+                    case 'setores': container.innerHTML = app.views.setores(); break;
+                    case 'lancamentos': container.innerHTML = app.views.lancamentos(); break;
+                    case 'higiene': container.innerHTML = app.views.higiene(); break;
+                    case 'proporcionais': container.innerHTML = app.views.proporcionais(); break;
+                    case 'relatorios': container.innerHTML = app.views.relatorios(); break;
+                    case 'configuracoes': container.innerHTML = app.views.configuracoes(); break;
+                }
+            },
+
+            // --- DATA OPERATIONS ---
+            filterLogEmp: (term) => {
+                term = term.toLowerCase();
+                const select = document.getElementById('log_emp');
+                Array.from(select.options).forEach(opt => {
+                    if (opt.value === "") return;
+                    const text = opt.text.toLowerCase();
+                    if (text.includes(term)) {
+                        opt.style.display = '';
+                    } else {
+                        opt.style.display = 'none';
+                    }
+                });
+            },
+
+            saveSettings: async (e) => {
+                e.preventDefault();
+                const fileInput = document.getElementById('logo_upload');
+                
+                if (fileInput.files && fileInput.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = async (event) => {
+                        const base64String = event.target.result;
+                        if(db) await setDoc(doc(db, `artifacts/${appId}/public/data/settings`, 'main'), { logo: base64String });
+                        app.toast("Logo atualizada com sucesso!", "success");
+                    };
+                    reader.readAsDataURL(fileInput.files[0]);
+                } else {
+                    app.toast("Selecione um arquivo de imagem primeiro.", "error");
+                }
+            },
+
+            removeLogo: () => {
+                app.confirmAction("Remover a logo atual do sistema?", "app.executeRemoveLogo()");
+            },
+            executeRemoveLogo: async () => {
+                if(db) await setDoc(doc(db, `artifacts/${appId}/public/data/settings`, 'main'), { logo: '' });
+                app.toast("Logo removida.", "success");
+            },
+
+            // --- PLANILHA IMPORTAÇÃO ---
+            showImportModal: () => {
+                app.openModal(`
+                    <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                        <h2 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-file-excel text-emerald-600 mr-2"></i> Importar Colaboradores</h2>
+                        <button onclick="app.closeModal()" class="text-gray-500 hover:text-red-500"><i class="fa-solid fa-times text-xl"></i></button>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl text-sm text-blue-900 leading-relaxed">
+                            <p class="font-bold mb-2">Instruções: Crie uma planilha (.xlsx ou .csv) simples com as seguintes colunas exatas na primeira linha:</p>
+                            <ul class="list-disc pl-5 space-y-1 mb-2 font-medium">
+                                <li><b>Nome</b> (Nome completo do colaborador)</li>
+                                <li><b>Setor</b> (Ex: Salgado, Expedição)</li>
+                                <li><b>Cargo</b> (Digite <span class="bg-white px-1 rounded border">Líder</span> ou <span class="bg-white px-1 rounded border">Liderado</span>)</li>
+                                <li><b>Valor</b> (Valor base da gratificação, ex: 180, 250)</li>
+                            </ul>
+                            <p class="italic opacity-80 mt-3 text-xs">* O sistema criará os setores ausentes e atualizará os valores do setor automaticamente.</p>
+                        </div>
+
+                        <div class="flex flex-col items-center justify-center w-full mt-4">
+                            <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-32 border-2 border-emerald-300 border-dashed rounded-xl cursor-pointer bg-emerald-50 hover:bg-emerald-100 transition-colors">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <i class="fa-solid fa-cloud-arrow-up text-3xl text-emerald-500 mb-2"></i>
+                                    <p class="text-sm font-semibold text-emerald-800">Clique para selecionar a Planilha</p>
+                                    <p class="text-xs text-emerald-600 mt-1">.XLSX ou .CSV (Máx. 5MB)</p>
+                                </div>
+                                <input id="dropzone-file" type="file" class="hidden" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" onchange="app.handleFileUpload(event)" />
+                            </label>
+                        </div>
+                    </div>
+                `);
+            },
+
+            handleFileUpload: async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                app.closeModal();
+                app.toast("Lendo planilha aguarde...", "info");
+
+                const reader = new FileReader();
+                reader.onload = async (evt) => {
+                    try {
+                        const data = new Uint8Array(evt.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        
+                        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                        if (json.length < 2) {
+                            return app.toast("A planilha parece estar vazia ou sem dados válidos.", "error");
+                        }
+
+                        const headers = json[0].map(h => String(h || '').toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, ""));
+                        const idxNome = headers.findIndex(h => h.includes('nome') || h.includes('colaborador'));
+                        const idxSetor = headers.findIndex(h => h.includes('setor'));
+                        const idxCargo = headers.findIndex(h => h.includes('cargo') || h.includes('perfil') || h.includes('funcao'));
+                        const idxValor = headers.findIndex(h => h.includes('valor'));
+
+                        if (idxNome === -1 || idxSetor === -1) {
+                            return app.toast("A planilha deve conter pelo menos as colunas 'Nome' e 'Setor'.", "error");
+                        }
+
+                        let sectorsMap = new Map(); 
+                        state.sectors.forEach(s => sectorsMap.set(s.name.toLowerCase().trim(), s));
+
+                        let employeesToSave = [];
+                        let sectorsToSave = new Map();
+
+                        for (let i = 1; i < json.length; i++) {
+                            const row = json[i];
+                            if (!row || row.length === 0 || !row[idxNome]) continue;
+
+                            const rawName = String(row[idxNome]).trim();
+                            const rawSector = row[idxSetor] ? String(row[idxSetor]).trim() : 'Geral';
+                            const rawCargo = row[idxCargo] ? String(row[idxCargo]).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "") : 'liderado';
+                            let rawValor = 0;
+                            if (row[idxValor]) {
+                                rawValor = parseFloat(String(row[idxValor]).replace('R$', '').trim().replace(',', '.'));
+                            }
+
+                            const role = (rawCargo.includes('lider') && !rawCargo.includes('liderado')) ? 'lider' : 'liderado';
+                            const sectorKey = rawSector.toLowerCase();
+
+                            let sector = sectorsMap.get(sectorKey);
+                            if (!sector) {
+                                sector = {
+                                    id: app.generateId(),
+                                    name: rawSector,
+                                    val_liderado: 0,
+                                    val_lider: 0
+                                };
+                                sectorsMap.set(sectorKey, sector);
+                                sectorsToSave.set(sector.id, sector);
+                            }
+
+                            if (rawValor && !isNaN(rawValor) && rawValor > 0) {
+                                if (role === 'lider' && sector.val_lider !== rawValor) {
+                                    sector.val_lider = rawValor;
+                                    sectorsToSave.set(sector.id, sector);
+                                }
+                                if (role === 'liderado' && sector.val_liderado !== rawValor) {
+                                    sector.val_liderado = rawValor;
+                                    sectorsToSave.set(sector.id, sector);
+                                }
+                            }
+
+                            let emp = state.employees.find(e => e.name.toLowerCase() === rawName.toLowerCase());
+                            if (!emp) {
+                                emp = {
+                                    id: app.generateId(),
+                                    name: rawName,
+                                    sectorId: sector.id,
+                                    role: role,
+                                    active: true
+                                };
+                                employeesToSave.push(emp);
+                            } else {
+                                let changed = false;
+                                if(emp.sectorId !== sector.id) { emp.sectorId = sector.id; changed = true; }
+                                if(emp.role !== role) { emp.role = role; changed = true; }
+                                if (changed) employeesToSave.push(emp);
+                            }
+                        }
+
+                        if (!db) return app.toast("Modo local. Conecte ao banco de dados para salvar.", "error");
+
+                        for (const [id, secData] of sectorsToSave.entries()) {
+                            await setDoc(doc(db, `artifacts/${appId}/public/data/sectors`, id), secData);
+                        }
+
+                        for (const emp of employeesToSave) {
+                            await setDoc(doc(db, `artifacts/${appId}/public/data/employees`, emp.id), emp);
+                        }
+
+                        app.toast(`${employeesToSave.length} colaborador(es) importado(s) com sucesso!`, "success");
+                    } catch (error) {
+                        console.error("Erro ao importar:", error);
+                        app.toast("Erro ao ler a planilha. Verifique o formato.", "error");
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            },
+
+            saveLog: async (e) => {
+                e.preventDefault();
+                const logType = document.querySelector('input[name="log_type"]:checked').value;
+                const date = document.getElementById('log_date').value;
+                const ruleId = document.getElementById('log_rule').value;
+                const obs = document.getElementById('log_obs').value;
+                
+                if(!date || !ruleId) return app.toast("Preencha todos os campos obrigatórios.", "error");
+                const monthId = getMonthId(new Date(date + 'T12:00:00'));
+                
+                if (logType === 'individual') {
+                    const empId = document.getElementById('log_emp').value;
+                    if(!empId) return app.toast("Selecione o colaborador.", "error");
+                    
+                    const id = app.generateId();
+                    const data = { employeeId: empId, date, ruleId, monthId, timestamp: Date.now(), obs: obs || '' };
+                    if(db) await setDoc(doc(db, `artifacts/${appId}/public/data/logs`, id), data);
+                    
+                    document.getElementById('log_form').reset();
+                    document.getElementById('log_date').value = date;
+                    if(document.getElementById('log_emp_search')) document.getElementById('log_emp_search').value = '';
+                    app.filterLogEmp(''); 
+                    app.toast("Erro registrado com sucesso.", "success");
+                } else {
+                    const secId = document.getElementById('log_sec').value;
+                    if(!secId) return app.toast("Selecione o setor.", "error");
+                    
+                    const emps = state.employees.filter(emp => emp.sectorId === secId);
+                    if(emps.length === 0) return app.toast("Nenhum colaborador encontrado neste setor.", "error");
+                    
+                    const safeObs = obs ? obs.replace(/'/g, "\\'").replace(/"/g, "&quot;") : '';
+                    
+                    app.confirmAction(
+                        `Esta ação aplicará o desconto selecionado para TODOS os ${emps.length} colaboradores do setor. Deseja confirmar?`,
+                        `app.executeSectorLog('${secId}', '${date}', '${ruleId}', '${safeObs}')`
+                    );
+                }
+            },
+            
+            executeSectorLog: async (secId, date, ruleId, obs) => {
+                const monthId = getMonthId(new Date(date + 'T12:00:00'));
+                const emps = state.employees.filter(emp => emp.sectorId === secId);
+                
+                if(db) {
+                    await Promise.all(emps.map(emp => {
+                        const id = app.generateId();
+                        const data = { 
+                            employeeId: emp.id, 
+                            date, 
+                            ruleId, 
+                            monthId, 
+                            timestamp: Date.now(), 
+                            obs: (obs ? obs + ' (Penalidade do Setor)' : 'Penalidade aplicada a todo o Setor') 
+                        };
+                        return setDoc(doc(db, `artifacts/${appId}/public/data/logs`, id), data);
+                    }));
+                }
+                
+                document.getElementById('log_form').reset();
+                document.getElementById('log_date').value = date;
+                if(document.getElementById('log_emp_search')) document.getElementById('log_emp_search').value = '';
+                app.filterLogEmp('');
+                app.toast("Erros registrados para todo o setor.", "success");
+            },
+            
+            saveEmployee: async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('emp_id').value || app.generateId();
+                const data = {
+                    name: document.getElementById('emp_name').value,
+                    sectorId: document.getElementById('emp_sector').value,
+                    role: document.getElementById('emp_role').value,
+                    active: true
+                };
+                if(db) await setDoc(doc(db, `artifacts/${appId}/public/data/employees`, id), data);
+                app.toast("Colaborador salvo com sucesso.", "success");
+                app.closeModal();
+            },
+            deleteEmployee: (id) => {
+                app.confirmAction("Tem certeza que deseja remover este colaborador?", `app.executeDeleteEmployee('${id}')`);
+            },
+            executeDeleteEmployee: async (id) => {
+                if(db) await deleteDoc(doc(db, `artifacts/${appId}/public/data/employees`, id));
+                app.toast("Colaborador removido.", "success");
+            },
+
+            saveSector: async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('sec_id').value || app.generateId();
+                const data = {
+                    name: document.getElementById('sec_name').value,
+                    val_liderado: Number(document.getElementById('sec_val_liderado').value),
+                    val_lider: Number(document.getElementById('sec_val_lider').value),
+                };
+                if(db) await setDoc(doc(db, `artifacts/${appId}/public/data/sectors`, id), data);
+                app.toast("Setor salvo com sucesso.", "success");
+                app.closeModal();
+            },
+            deleteLog: (id) => {
+                app.confirmAction("Excluir este registro de erro?", `app.executeDeleteLog('${id}')`);
+            },
+            executeDeleteLog: async (id) => {
+                if(db) await deleteDoc(doc(db, `artifacts/${appId}/public/data/logs`, id));
+                app.toast("Registro excluído com sucesso.", "success");
+            },
+
+            saveProration: async (e) => {
+                e.preventDefault();
+                const empId = document.getElementById('pro_emp').value;
+                const monthId = document.getElementById('pro_month').value;
+                const daysWorked = Number(document.getElementById('pro_days').value);
+                const totalDays = Number(document.getElementById('pro_total').value);
+                
+                if(!empId || !monthId || !daysWorked || !totalDays) return;
+
+                const id = `${empId}_${monthId}`;
+                const data = { employeeId: empId, monthId, daysWorked, totalDays };
+                
+                if(db) await setDoc(doc(db, `artifacts/${appId}/public/data/prorations`, id), data);
+                app.toast("Registro salvo com sucesso.", "success");
+                app.closeModal();
+            },
+            deleteProration: (id) => {
+                app.confirmAction("Excluir este registro de férias/admissão?", `app.executeDeleteProration('${id}')`);
+            },
+            executeDeleteProration: async (id) => {
+                if(db) await deleteDoc(doc(db, `artifacts/${appId}/public/data/prorations`, id));
+                app.toast("Registro excluído com sucesso.", "success");
+            },
+
+            toggleHygiene: async (empId, date, isChecked) => {
+                const id = `${date}_${empId}`;
+                if (isChecked) {
+                    const data = { employeeId: empId, date, timestamp: Date.now() };
+                    if(db) await setDoc(doc(db, `artifacts/${appId}/public/data/hygiene_checks`, id), data);
+                } else {
+                    if(db) await deleteDoc(doc(db, `artifacts/${appId}/public/data/hygiene_checks`, id));
+                }
+            },
+            filterHigiene: (term) => {
+                term = term.toLowerCase();
+                const groups = document.querySelectorAll('.sector-group');
+                groups.forEach(group => {
+                    let hasVisible = false;
+                    const rows = group.querySelectorAll('.higiene-emp-row');
+                    rows.forEach(row => {
+                        if (row.dataset.name.includes(term)) {
+                            row.style.display = 'flex';
+                            hasVisible = true;
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                    group.style.display = hasVisible ? 'block' : 'none';
+                });
+            },
+
+            openModal: (html) => {
+                document.getElementById('modals').innerHTML = `
+                    <div class="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4 backdrop-blur-sm">
+                        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-[fadeIn_0.2s_ease-out]">
+                            ${html}
+                        </div>
+                    </div>
+                `;
+            },
+            closeModal: () => {
+                document.getElementById('modals').innerHTML = '';
+            },
+
+            showEmployeeForm: (id = null) => {
+                const emp = id ? state.employees.find(e => e.id === id) : {};
+                const sectorOpts = state.sectors.map(s => `<option value="${s.id}" ${emp.sectorId === s.id ? 'selected' : ''}>${s.name}</option>`).join('');
+                const html = `
+                    <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                        <h2 class="text-xl font-bold text-gray-800">${id ? 'Editar Colaborador' : 'Novo Colaborador'}</h2>
+                        <button onclick="app.closeModal()" class="text-gray-500 hover:text-red-500"><i class="fa-solid fa-times text-xl"></i></button>
+                    </div>
+                    <form onsubmit="app.saveEmployee(event)" class="p-6 space-y-4">
+                        <input type="hidden" id="emp_id" value="${emp.id || ''}">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Nome Completo</label>
+                            <input type="text" id="emp_name" value="${emp.name || ''}" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Setor</label>
+                                <select id="emp_sector" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                                    <option value="">Selecione...</option>
+                                    ${sectorOpts}
+                                </select>
                             </div>
                             <div>
-                                <h3 class="font-bold text-gray-800">${e.name}</h3>
-                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">${state.sectors.find(s => s.id === e.sectorId)?.name || 'S/ SETOR'}</p>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Cargo/Perfil</label>
+                                <select id="emp_role" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                                    <option value="liderado" ${emp.role === 'liderado' ? 'selected' : ''}>Liderado</option>
+                                    <option value="lider" ${emp.role === 'lider' ? 'selected' : ''}>Líder</option>
+                                </select>
                             </div>
                         </div>
-                        <div class="flex gap-2">
-                            <select onchange="updateEmpStatus('${e.id}', this.value)" class="text-[10px] font-bold uppercase bg-gray-50 border-none p-1 rounded-lg">
-                                <option value="active" ${e.status === 'active' ? 'selected' : ''}>Ativo</option>
-                                <option value="vacation" ${e.status === 'vacation' ? 'selected' : ''}>Férias</option>
-                                <option value="warning" ${e.status === 'warning' ? 'selected' : ''}>Advertência</option>
-                            </select>
-                            <button onclick="deleteEmployee('${e.id}')" class="text-gray-200 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        <div class="pt-4 flex justify-end space-x-3">
+                            <button type="button" onclick="app.closeModal()" class="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium">Cancelar</button>
+                            <button type="submit" class="px-5 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium">Salvar</button>
                         </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
-                        <div class="bg-gray-50/50 p-3 rounded-2xl">
-                            <p class="text-[9px] text-gray-400 uppercase font-black mb-1">Gratificação</p>
-                            <p class="text-xl font-black ${calculateGratification(e) > 0 ? 'text-green-600' : 'text-gray-400'}">${calculateGratification(e)}%</p>
-                        </div>
-                        <div class="bg-gray-50/50 p-3 rounded-2xl">
-                            <p class="text-[9px] text-gray-400 uppercase font-black mb-1">Status Base</p>
-                            <span class="text-xs font-bold ${e.status === 'active' ? 'text-green-500' : 'text-red-400'}">${e.status === 'active' ? '● APTO' : '○ INAPTO'}</span>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-
-            // Settings Lists
-            const setSectorsList = document.getElementById('settings-sectors-list');
-            setSectorsList.innerHTML = state.sectors.map(s => `
-                <div class="bg-white p-4 rounded-2xl flex items-center justify-between border border-gray-100">
-                    <span class="font-bold text-xs uppercase tracking-tighter">${s.name}</span>
-                    <div class="flex gap-2">
-                        <input type="number" value="${s.checklist}" onblur="updateSector('${s.id}', 'checklist', this.value)" class="w-12 bg-gray-50 text-xs p-1 text-center rounded-lg border-none">
-                        <select onchange="updateSector('${s.id}', 'spreadsheet', this.value)" class="bg-gray-50 text-[10px] font-bold p-1 rounded-lg border-none uppercase">
-                            <option value="ok" ${s.spreadsheet === 'ok' ? 'selected' : ''}>OK</option>
-                            <option value="pending" ${s.spreadsheet === 'pending' ? 'selected' : ''}>Pendente</option>
-                        </select>
-                        <button onclick="deleteSector('${s.id}')"><i data-lucide="trash" class="w-4 h-4 text-red-200"></i></button>
-                    </div>
-                </div>
-            `).join('');
-
-            const setCritList = document.getElementById('settings-criteria-list');
-            setCritList.innerHTML = state.criteria.map(c => `
-                <div class="bg-white p-4 rounded-2xl flex justify-between items-center border border-gray-100">
-                    <span class="text-sm font-medium">${c.name}</span>
-                    <div class="flex items-center gap-4">
-                        <span class="text-red-500 font-bold text-sm">-${c.percentage}%</span>
-                        <button onclick="deleteCriterion('${c.id}')"><i data-lucide="trash" class="w-4 h-4 text-gray-200"></i></button>
-                    </div>
-                </div>
-            `).join('');
-
-            // Modais Selects
-            document.getElementById('new-emp-sector').innerHTML = state.sectors.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-            document.getElementById('irr-emp').innerHTML = `<option value="">Escolha o colaborador...</option>` + state.employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-            document.getElementById('irr-crit').innerHTML = `<option value="">Critério violado...</option>` + state.criteria.map(c => `<option value="${c.id}">${c.name} (-${c.percentage}%)</option>`).join('');
-
-            // Header Config
-            if (state.config.logo) {
-                document.getElementById('logo-container').innerHTML = `<img src="${state.config.logo}" class="w-full h-full object-contain">`;
-                document.getElementById('logo-preview').innerHTML = `<img src="${state.config.logo}" class="w-full h-full object-contain">`;
-            }
-
-            // Global Metrics
-            const okSectors = state.sectors.filter(s => s.checklist >= 85 && s.spreadsheet === 'ok').length;
-            const perc = state.sectors.length ? (okSectors / state.sectors.length * 100).toFixed(0) : 0;
-            document.getElementById('global-progress').innerText = perc + '%';
-            document.getElementById('progress-bar').style.width = perc + '%';
-            document.getElementById('sector-count').innerText = `${okSectors}/${state.sectors.length} setores conformes`;
-
-            lucide.createIcons();
-        }
-
-        function renderCalendar() {
-            const grid = document.getElementById('calendar-grid');
-            const monthDisp = document.getElementById('current-month-display');
-            const date = state.currentViewDate;
-            
-            monthDisp.innerText = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-            
-            const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-            const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-            
-            let html = ['D','S','T','Q','Q','S','S'].map(d => `<div class="text-[10px] text-gray-400 font-bold text-center py-2">${d}</div>`).join('');
-            
-            for (let i = 0; i < firstDay; i++) html += '<div></div>';
-            
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const hasIrr = state.irregularities.some(i => i.date === dateStr);
-                html += `
-                    <button onclick="openIrregularityModal('${dateStr}')" class="aspect-square flex items-center justify-center text-sm font-semibold rounded-xl transition-all ${hasIrr ? 'has-irr' : 'bg-gray-50 text-gray-700'}">
-                        ${day}
-                    </button>
+                    </form>
                 `;
-            }
-            grid.innerHTML = html;
-
-            const irrMonth = state.irregularities.filter(i => i.date.startsWith(date.toISOString().slice(0, 7)));
-            document.getElementById('month-irregularities').innerHTML = irrMonth.length ? irrMonth.map(irr => {
-                const emp = state.employees.find(e => e.id === irr.empId);
-                const crit = state.criteria.find(c => c.id === irr.critId);
-                return `
-                    <div class="ios-card p-4 border-l-4 border-red-400 flex justify-between items-center">
+                app.openModal(html);
+            },
+            showSectorForm: (id = null) => {
+                const sec = id ? state.sectors.find(s => s.id === id) : {};
+                const html = `
+                    <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                        <h2 class="text-xl font-bold text-gray-800">${id ? 'Editar Setor' : 'Novo Setor'}</h2>
+                        <button onclick="app.closeModal()" class="text-gray-500 hover:text-red-500"><i class="fa-solid fa-times text-xl"></i></button>
+                    </div>
+                    <form onsubmit="app.saveSector(event)" class="p-6 space-y-4">
+                        <input type="hidden" id="sec_id" value="${sec.id || ''}">
                         <div>
-                            <p class="text-[9px] font-black text-gray-400 uppercase">${irr.date.split('-').reverse().join('/')} • ${crit?.name}</p>
-                            <p class="font-bold text-sm">${emp?.name}</p>
-                            <p class="text-xs text-gray-500 italic mt-1 leading-tight">"${irr.desc}"</p>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Nome do Setor</label>
+                            <input type="text" id="sec_name" value="${sec.name || ''}" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
-                        <button onclick="deleteIrregularity('${irr.id}')" class="text-gray-300"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                    </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Valor Base Liderado (R$)</label>
+                                <input type="number" step="0.01" id="sec_val_liderado" value="${sec.val_liderado || ''}" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Valor Base Líder (R$)</label>
+                                <input type="number" step="0.01" id="sec_val_lider" value="${sec.val_lider || ''}" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        <div class="pt-4 flex justify-end space-x-3">
+                            <button type="button" onclick="app.closeModal()" class="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium">Cancelar</button>
+                            <button type="submit" class="px-5 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium">Salvar</button>
+                        </div>
+                    </form>
                 `;
-            }).join('') : '<p class="text-center text-xs text-gray-400 py-4">Sem ocorrências registradas.</p>';
-            
-            lucide.createIcons();
-        }
+                app.openModal(html);
+            },
+            showProrationForm: () => {
+                const empOpts = state.employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+                const currentMonth = getMonthId(new Date());
+                const html = `
+                    <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                        <h2 class="text-xl font-bold text-gray-800">Registrar Férias/Admissão</h2>
+                        <button onclick="app.closeModal()" class="text-gray-500 hover:text-red-500"><i class="fa-solid fa-times text-xl"></i></button>
+                    </div>
+                    <form onsubmit="app.saveProration(event)" class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Colaborador</label>
+                            <select id="pro_emp" required class="w-full px-4 py-2 border rounded-lg bg-white">${empOpts}</select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Mês de Referência</label>
+                            <input type="month" id="pro_month" value="${currentMonth}" required class="w-full px-4 py-2 border rounded-lg">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Dias Trabalhados</label>
+                                <input type="number" min="0" max="31" id="pro_days" required class="w-full px-4 py-2 border rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Total Dias no Mês</label>
+                                <input type="number" min="28" max="31" id="pro_total" value="30" required class="w-full px-4 py-2 border rounded-lg">
+                            </div>
+                        </div>
+                        <div class="pt-4 flex justify-end space-x-3">
+                            <button type="button" onclick="app.closeModal()" class="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium">Cancelar</button>
+                            <button type="submit" class="px-5 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium">Salvar</button>
+                        </div>
+                    </form>
+                `;
+                app.openModal(html);
+            },
 
-        // --- Ações ---
-        function changeMonth(step) {
-            state.currentViewDate.setMonth(state.currentViewDate.getMonth() + step);
-            renderCalendar();
-            render();
-        }
+            // --- REPORTS ---
+            calculateMonthlyReport: (monthId) => {
+                const report = [];
+                state.employees.forEach(emp => {
+                    const sector = state.sectors.find(s => s.id === emp.sectorId);
+                    if(!sector) return;
 
-        function handleLogo(e) {
-            const reader = new FileReader();
-            reader.onload = function(){
-                state.config.logo = reader.result;
-                saveState();
-            };
-            reader.readAsDataURL(e.target.files[0]);
-        }
+                    const baseValue = emp.role === 'lider' ? sector.val_lider : sector.val_liderado;
+                    
+                    const proration = state.prorations.find(p => p.employeeId === emp.id && p.monthId === monthId);
+                    let validBase = baseValue;
+                    let proportionMsg = "Mês Integral";
+                    if (proration) {
+                        const ratio = proration.daysWorked / proration.totalDays;
+                        validBase = baseValue * ratio;
+                        proportionMsg = `${proration.daysWorked}/${proration.totalDays} dias`;
+                    }
 
-        function saveEmployee() {
-            const name = document.getElementById('new-emp-name').value;
-            if (!name) return;
-            state.employees.push({
-                id: Date.now().toString(),
-                name,
-                sectorId: document.getElementById('new-emp-sector').value,
-                role: document.getElementById('new-emp-role').value,
-                hireDate: document.getElementById('new-emp-date').value || new Date().toISOString().split('T')[0],
-                status: 'active'
-            });
-            closeModal('employee-modal');
-            saveState();
-        }
+                    const empLogs = state.logs.filter(l => l.employeeId === emp.id && l.monthId === monthId);
+                    let totalDeductionPct = 0;
+                    const errorCounts = {};
 
-        function deleteEmployee(id) { if(confirm('Excluir colaborador?')) { state.employees = state.employees.filter(e => e.id !== id); saveState(); } }
-        function updateEmpStatus(id, status) { 
-            const emp = state.employees.find(e => e.id === id);
-            if(emp) { emp.status = status; saveState(); }
-        }
+                    empLogs.forEach(log => {
+                        errorCounts[log.ruleId] = (errorCounts[log.ruleId] || 0) + 1;
+                    });
 
-        function openIrregularityModal(date) {
-            const d = date || new Date().toISOString().split('T')[0];
-            document.getElementById('irr-date-display').innerText = d.split('-').reverse().join('/');
-            document.getElementById('irr-date-display').dataset.date = d;
-            openModal('irr-modal');
-        }
+                    state.rules.forEach(rule => {
+                        const count = errorCounts[rule.id] || 0;
+                        const validCount = Math.min(count, rule.max);
+                        totalDeductionPct += (validCount * rule.pct);
+                    });
 
-        function saveIrregularity() {
-            const empId = document.getElementById('irr-emp').value;
-            const critId = document.getElementById('irr-crit').value;
-            if (!empId || !critId) return;
-            
-            state.irregularities.push({
-                id: Date.now().toString(),
-                empId,
-                critId,
-                date: document.getElementById('irr-date-display').dataset.date,
-                desc: document.getElementById('irr-desc').value
-            });
-            closeModal('irr-modal');
-            saveState();
-            
-            // Correção do erro: Usando state.activeTab em vez de activeTab
-            if(state.activeTab === 'history') renderCalendar();
-        }
+                    if (totalDeductionPct > 1) totalDeductionPct = 1;
 
-        function deleteIrregularity(id) { state.irregularities = state.irregularities.filter(i => i.id !== id); saveState(); renderCalendar(); }
+                    const deductionValue = validBase * totalDeductionPct;
+                    const finalValue = validBase - deductionValue;
 
-        function addNewSector() {
-            const name = prompt("Nome do Setor:");
-            if(name) { state.sectors.push({ id: Date.now().toString(), name, checklist: 100, spreadsheet: 'ok' }); saveState(); }
-        }
+                    report.push({
+                        emp, sectorName: sector.name, baseValue, validBase, proportionMsg, totalDeductionPct, deductionValue, finalValue, errorCounts
+                    });
+                });
+                return report.sort((a,b) => a.sectorName.localeCompare(b.sectorName) || a.emp.name.localeCompare(b.emp.name));
+            },
 
-        function updateSector(id, field, val) {
-            const sector = state.sectors.find(s => s.id === id);
-            if(sector) { sector[field] = field === 'checklist' ? parseInt(val) : val; saveState(); }
-        }
+            generateErrorLogsReportHtml: (monthId) => {
+                let html = '';
+                const sortedSectors = [...state.sectors].sort((a,b)=>(a.name || '').localeCompare(b.name || ''));
+                
+                sortedSectors.forEach(sec => {
+                    const emps = state.employees.filter(e => e.sectorId === sec.id).sort((a,b)=>(a.name || '').localeCompare(b.name || ''));
+                    if(emps.length === 0) return;
+                    
+                    let sectorLogsHtml = '';
+                    emps.forEach(emp => {
+                        const empLogs = state.logs.filter(l => l.employeeId === emp.id && l.monthId === monthId).sort((a,b) => new Date(a.date || 0) - new Date(b.date || 0));
+                        if(empLogs.length === 0) return;
+                        
+                        const logsList = empLogs.map(l => {
+                            const rule = state.rules.find(r => r.id === l.ruleId);
+                            const dateStr = l.date ? l.date.split('-').reverse().join('/') : '--/--/----';
+                            const obsStr = l.obs ? `<br><span class="text-xs text-gray-500 italic mt-1 block"><i class="fa-solid fa-comment-dots text-gray-400 mr-1"></i> ${l.obs}</span>` : '';
+                            
+                            return `
+                                <li class="text-sm text-gray-700 ml-4 border-l-2 border-red-400 pl-3 py-2 mb-1">
+                                    <span class="font-bold w-24 inline-block text-gray-500">${dateStr}</span> 
+                                    <span>${rule ? rule.name : 'Desconhecido'} <b class="text-red-500">(-${formatPct(rule?.pct||0)})</b></span>
+                                    ${obsStr}
+                                </li>
+                            `;
+                        }).join('');
+                        
+                        sectorLogsHtml += `
+                            <div class="mb-4 bg-gray-50 rounded-lg p-4 border border-gray-100">
+                                <p class="font-bold text-gray-800 text-lg mb-2"><i class="fa-solid fa-user text-gray-400 mr-2"></i> ${emp.name}</p>
+                                <ul class="mt-1">${logsList}</ul>
+                            </div>
+                        `;
+                    });
+                    
+                    if(sectorLogsHtml) {
+                        html += `
+                            <div class="mb-8 page-break-avoid">
+                                <h3 class="bg-slate-800 text-white px-5 py-3 rounded-xl font-bold mb-4 shadow-sm flex items-center">
+                                    <i class="fa-solid fa-sitemap mr-3 opacity-70"></i> ${sec.name}
+                                </h3>
+                                <div class="px-2">${sectorLogsHtml}</div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                return html || '<div class="p-12 text-center text-gray-500 text-lg bg-gray-50 rounded-xl border border-gray-100">Nenhum erro registrado neste mês para os setores.</div>';
+            },
 
-        function deleteSector(id) { if(confirm('Excluir setor?')) { state.sectors = state.sectors.filter(s => s.id !== id); saveState(); } }
+            // --- VIEWS ---
+            views: {
+                dashboard: () => {
+                    const monthId = getMonthId(new Date());
+                    const report = app.calculateMonthlyReport(monthId);
+                    const totalPay = report.reduce((sum, r) => sum + r.finalValue, 0);
+                    const totalErrors = state.logs.filter(l => l.monthId === monthId).length;
 
-        function addNewCriterion() {
-            const name = prompt("Nome do Critério:");
-            const perc = prompt("Porcentagem de Desconto:");
-            if(name && perc) { state.criteria.push({ id: Date.now().toString(), name, percentage: parseInt(perc) }); saveState(); }
-        }
+                    return `
+                        <h3 class="text-gray-800 text-xl font-bold mb-4">Visão Geral - ${monthId}</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div class="bg-white rounded-2xl shadow-sm p-6 border-l-4 border-blue-500">
+                                <p class="text-sm text-gray-500 font-semibold mb-1">Total de Colaboradores</p>
+                                <p class="text-3xl font-bold text-gray-800">${state.employees.length}</p>
+                            </div>
+                            <div class="bg-white rounded-2xl shadow-sm p-6 border-l-4 border-emerald-500">
+                                <p class="text-sm text-gray-500 font-semibold mb-1">Previsão de Pagamento</p>
+                                <p class="text-3xl font-bold text-gray-800">${formatBRL(totalPay)}</p>
+                            </div>
+                            <div class="bg-white rounded-2xl shadow-sm p-6 border-l-4 border-red-500">
+                                <p class="text-sm text-gray-500 font-semibold mb-1">Erros Registrados (Mês)</p>
+                                <p class="text-3xl font-bold text-gray-800">${totalErrors}</p>
+                            </div>
+                        </div>
+                    `;
+                },
+                colaboradores: () => {
+                    const rows = state.employees.sort((a,b)=>a.name.localeCompare(b.name)).map(emp => {
+                        const sec = state.sectors.find(s => s.id === emp.sectorId);
+                        const roleName = emp.role === 'lider' ? '<span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded font-semibold">Líder</span>' : '<span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded font-semibold">Liderado</span>';
+                        return `
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="px-4 py-3 font-medium text-gray-800">${emp.name}</td>
+                                <td class="px-4 py-3 text-gray-600">${sec ? sec.name : 'N/A'}</td>
+                                <td class="px-4 py-3">${roleName}</td>
+                                <td class="px-4 py-3 text-right">
+                                    <button onclick="app.showEmployeeForm('${emp.id}')" class="text-blue-500 hover:text-blue-700 mx-2"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="app.deleteEmployee('${emp.id}')" class="text-red-500 hover:text-red-700 mx-2"><i class="fa-solid fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                    return `
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
+                            <h2 class="text-2xl font-bold text-gray-800">Colaboradores</h2>
+                            <div class="flex space-x-3 w-full md:w-auto">
+                                <button onclick="app.showImportModal()" class="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex justify-center items-center">
+                                    <i class="fa-solid fa-file-import mr-2"></i> Importar Planilha
+                                </button>
+                                <button onclick="app.showEmployeeForm()" class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm flex justify-center items-center">
+                                    <i class="fa-solid fa-plus mr-2"></i> Novo
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"><table class="w-full text-left"><thead><tr class="bg-gray-50 text-gray-500 text-sm border-b"><th class="px-4 py-3">Nome</th><th class="px-4 py-3">Setor</th><th class="px-4 py-3">Perfil</th><th class="px-4 py-3 text-right">Ações</th></tr></thead><tbody>${rows||'<tr><td colspan="4" class="text-center py-8">Nenhum colaborador.</td></tr>'}</tbody></table></div>
+                    `;
+                },
+                setores: () => {
+                    const secRows = state.sectors.sort((a,b)=>a.name.localeCompare(b.name)).map(sec => `
+                        <tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium text-gray-800">${sec.name}</td><td class="px-4 py-3">${formatBRL(sec.val_liderado)}</td><td class="px-4 py-3">${formatBRL(sec.val_lider)}</td><td class="px-4 py-3 text-right"><button onclick="app.showSectorForm('${sec.id}')" class="text-blue-500"><i class="fa-solid fa-pen"></i></button></td></tr>
+                    `).join('');
+                    const ruleRows = state.rules.map(rule => `
+                        <tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 text-gray-800">${rule.name}</td><td class="px-4 py-3 text-red-500 font-semibold">-${formatPct(rule.pct)}</td><td class="px-4 py-3 text-gray-600">Até ${rule.max}x</td></tr>
+                    `).join('');
+                    return `
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">Setores</h2><button onclick="app.showSectorForm()" class="bg-blue-600 text-white px-3 py-1 text-sm rounded-lg"><i class="fa-solid fa-plus"></i> Novo</button></div><div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"><table class="w-full text-left"><thead class="bg-gray-50 border-b text-sm text-gray-500"><tr><th class="px-4 py-3">Setor</th><th class="px-4 py-3">Liderado</th><th class="px-4 py-3">Líder</th><th class="px-4 py-3 text-right">Ação</th></tr></thead><tbody>${secRows}</tbody></table></div></div>
+                            <div><h2 class="text-xl font-bold text-gray-800 mb-4">Regras de Desconto</h2><div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"><table class="w-full text-left"><thead class="bg-gray-50 border-b text-sm text-gray-500"><tr><th class="px-4 py-3">Critério</th><th class="px-4 py-3">% Desconto</th><th class="px-4 py-3">Limite</th></tr></thead><tbody>${ruleRows}</tbody></table></div></div>
+                        </div>
+                    `;
+                },
+                lancamentos: () => {
+                    const empOpts = state.employees.sort((a,b)=>(a.name||'').localeCompare(b.name||'')).map(e => `<option value="${e.id}" class="py-2 border-b border-gray-50">${e.name}</option>`).join('');
+                    const sectorOpts = state.sectors.sort((a,b)=>a.name.localeCompare(b.name)).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                    const ruleOpts = state.rules.map(r => `<option value="${r.id}">${r.name} (-${formatPct(r.pct)})</option>`).join('');
+                    
+                    const today = new Date().toISOString().split('T')[0];
+                    const currentMonthId = getMonthId(new Date());
 
-        function deleteCriterion(id) { state.criteria = state.criteria.filter(c => c.id !== id); saveState(); }
+                    const recentLogs = state.logs.filter(l => l.monthId === currentMonthId).sort((a,b) => b.timestamp - a.timestamp).slice(0, 10).map(log => {
+                            const emp = state.employees.find(e => e.id === log.employeeId)?.name || 'Desconhecido';
+                            const rule = state.rules.find(r => r.id === log.ruleId)?.name || 'Desconhecido';
+                            const dateStr = log.date ? log.date.split('-').reverse().join('/') : '--/--/----';
+                            const obsSnippet = log.obs ? `<p class="text-xs text-gray-500 italic truncate w-48 mt-0.5" title="${log.obs}">${log.obs}</p>` : '';
+                            
+                            return `<div class="flex justify-between items-center p-3 border-b hover:bg-gray-50"><div class="overflow-hidden"><p class="font-semibold text-gray-800 text-sm">${emp}</p><p class="text-xs text-red-600">${rule} | ${dateStr}</p>${obsSnippet}</div><button onclick="app.deleteLog('${log.id}')" class="text-red-400 ml-2 shrink-0"><i class="fa-solid fa-trash"></i></button></div>`;
+                        }).join('');
 
-        function exportPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            if(state.config.logo) doc.addImage(state.config.logo, 'PNG', 10, 10, 25, 25);
-            doc.setFontSize(18);
-            doc.text("Relatório de Conformidades IMAC", 40, 20);
-            doc.setFontSize(10);
-            doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, 40, 28);
+                    return `
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div class="lg:col-span-2">
+                                <h2 class="text-2xl font-bold text-gray-800 mb-6">Lançamento de Erros/Faltas</h2>
+                                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                                    <form id="log_form" onsubmit="app.saveLog(event)" class="space-y-6">
+                                        
+                                        <!-- Tipo de Lançamento -->
+                                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                            <label class="block text-sm font-bold text-gray-700 mb-3">1. Tipo de Lançamento</label>
+                                            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-6">
+                                                <label class="flex items-center space-x-2 cursor-pointer">
+                                                    <input type="radio" name="log_type" value="individual" checked onchange="document.getElementById('div_emp').classList.remove('hidden'); document.getElementById('div_sec').classList.add('hidden');" class="w-5 h-5 text-blue-600 focus:ring-blue-500">
+                                                    <span class="font-medium text-gray-800">Colaborador (Individual)</span>
+                                                </label>
+                                                <label class="flex items-center space-x-2 cursor-pointer">
+                                                    <input type="radio" name="log_type" value="setor" onchange="document.getElementById('div_emp').classList.add('hidden'); document.getElementById('div_sec').classList.remove('hidden');" class="w-5 h-5 text-blue-600 focus:ring-blue-500">
+                                                    <span class="font-medium text-gray-800">Setor Inteiro (Coletivo)</span>
+                                                </label>
+                                            </div>
+                                        </div>
 
-            const tableData = state.irregularities.map(irr => [
-                irr.date,
-                state.employees.find(e => e.id === irr.empId)?.name || 'N/A',
-                state.criteria.find(c => c.id === irr.critId)?.name || 'N/A',
-                irr.desc
-            ]);
+                                        <!-- Alvo do Lançamento -->
+                                        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                                            <label class="block text-sm font-bold text-blue-900 mb-2">2. Selecione o Alvo</label>
+                                            
+                                            <!-- Seleção Individual -->
+                                            <div id="div_emp">
+                                                <div class="relative mb-2">
+                                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                                        <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+                                                    </div>
+                                                    <input type="text" id="log_emp_search" placeholder="Busca inteligente por nome..." onkeyup="app.filterLogEmp(this.value)" class="w-full pl-10 pr-4 py-3 text-lg border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white">
+                                                </div>
+                                                <select id="log_emp" size="5" class="w-full px-2 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-inner text-lg">
+                                                    <option value="" class="hidden">Selecione...</option>
+                                                    ${empOpts}
+                                                </select>
+                                            </div>
 
-            doc.autoTable({
-                startY: 40,
-                head: [['Data', 'Colaborador', 'Critério', 'Descrição']],
-                body: tableData,
-                headStyles: { fillColor: [234, 179, 8] }
-            });
+                                            <!-- Seleção por Setor -->
+                                            <div id="div_sec" class="hidden">
+                                                <p class="text-sm text-blue-800 mb-2 italic">O desconto será aplicado a todos os colaboradores vinculados ao setor selecionado.</p>
+                                                <select id="log_sec" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-inner text-lg">
+                                                    <option value="">Selecione o setor penalizado...</option>
+                                                    ${sectorOpts}
+                                                </select>
+                                            </div>
+                                        </div>
 
-            doc.save('relatorio-imac.pdf');
-        }
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+                                            <div>
+                                                <label class="block text-sm font-semibold text-gray-700 mb-1">3. Data da Ocorrência</label>
+                                                <input type="date" id="log_date" value="${today}" required class="w-full px-4 py-3 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-semibold text-gray-700 mb-1">4. Critério (Erro/Falta)</label>
+                                                <select id="log_rule" required class="w-full px-4 py-3 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                                                    <option value="">Selecione a ocorrência...</option>
+                                                    ${ruleOpts}
+                                                </select>
+                                            </div>
+                                        </div>
 
-        // --- Inicialização ---
-        window.onload = () => {
-            switchTab('dashboard');
-            render();
-            lucide.createIcons();
+                                        <div>
+                                            <label class="block text-sm font-semibold text-gray-700 mb-1">5. Observação / Justificativa (Opcional)</label>
+                                            <textarea id="log_obs" rows="2" placeholder="Descreva brevemente o motivo do desconto..." class="w-full px-4 py-3 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none resize-none"></textarea>
+                                        </div>
+
+                                        <div class="pt-4">
+                                            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl shadow-md transition-colors flex justify-center items-center text-lg">
+                                                <i class="fa-solid fa-triangle-exclamation mr-2"></i> Registrar Desconto
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-800 mb-4">Últimos Lançamentos (${currentMonthId})</h3>
+                                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                                    ${recentLogs || '<div class="p-6 text-center text-gray-500">Nenhum erro registrado.</div>'}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                },
+                higiene: () => {
+                    const today = document.getElementById('higiene_date')?.value || new Date().toISOString().split('T')[0];
+                    let sectorsHtml = '';
+                    const grouped = {};
+                    state.employees.forEach(emp => { if(!grouped[emp.sectorId]) grouped[emp.sectorId] = []; grouped[emp.sectorId].push(emp); });
+
+                    [...state.sectors].sort((a,b)=>a.name.localeCompare(b.name)).forEach(sec => {
+                        const emps = grouped[sec.id];
+                        if(!emps || emps.length === 0) return;
+                        emps.sort((a,b)=>a.name.localeCompare(b.name));
+                        const empsHtml = emps.map(emp => {
+                            const isChecked = state.hygieneChecks.some(hc => hc.employeeId === emp.id && hc.date === today);
+                            return `<div class="higiene-emp-row flex items-center justify-between p-4 border-b hover:bg-gray-50" data-name="${emp.name.toLowerCase()}"><span class="text-gray-800 font-medium text-lg">${emp.name}</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" class="sr-only peer" ${isChecked?'checked':''} onchange="app.toggleHygiene('${emp.id}','${today}',this.checked)"><div class="w-14 h-7 bg-gray-200 peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600"></div></label></div>`;
+                        }).join('');
+                        sectorsHtml += `<div class="mb-6 sector-group shadow-sm rounded-xl overflow-hidden border border-slate-200"><h3 class="bg-slate-800 text-white px-5 py-3 font-bold text-lg"><i class="fa-solid fa-users mr-3 opacity-70"></i> ${sec.name}</h3><div class="bg-white">${empsHtml}</div></div>`;
+                    });
+
+                    return `
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
+                            <h2 class="text-2xl font-bold text-gray-800 flex items-center"><i class="fa-solid fa-hands-bubbles text-blue-500 mr-3 text-3xl"></i> Inspeção de Higiene</h2>
+                            <div class="flex items-center space-x-3 w-full md:w-auto bg-white p-2 rounded-lg shadow-sm border border-gray-100">
+                                <label class="font-semibold text-gray-600 pl-2">Data:</label>
+                                <input type="date" id="higiene_date" value="${today}" onchange="app.render()" class="px-3 py-1.5 border-none bg-gray-50 focus:ring-2 outline-none rounded w-full md:w-auto">
+                            </div>
+                        </div>
+                        <div class="mb-8 relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none"><i class="fa-solid fa-magnifying-glass text-gray-400 text-lg"></i></div>
+                            <input type="text" placeholder="Busca inteligente por nome..." onkeyup="app.filterHigiene(this.value)" class="w-full pl-12 pr-4 py-4 text-lg border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                        </div>
+                        <div id="higiene_list" class="max-w-4xl mx-auto">${sectorsHtml||'<p class="text-center text-gray-500">Nenhum colaborador.</p>'}</div>
+                    `;
+                },
+                proporcionais: () => {
+                    const currentMonthId = getMonthId(new Date());
+                    const list = state.prorations.filter(p => p.monthId === currentMonthId).map(p => {
+                        const emp = state.employees.find(e => e.id === p.employeeId);
+                        return `<div class="flex justify-between items-center p-4 border-b"><div><p class="font-bold text-gray-800">${emp?emp.name:'Desc.'}</p><p class="text-sm text-gray-500">${p.daysWorked} de ${p.totalDays} dias</p></div><button onclick="app.deleteProration('${p.id}')" class="text-red-500"><i class="fa-solid fa-trash"></i></button></div>`;
+                    }).join('');
+                    return `
+                        <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800">Férias e Admissões</h2><button onclick="app.showProrationForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg"><i class="fa-solid fa-plus mr-2"></i> Registrar</button></div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 max-w-2xl"><div class="p-4 bg-gray-50 border-b font-semibold text-gray-600">Mês Atual (${currentMonthId})</div>${list||'<div class="p-8 text-center text-gray-500">Nenhum registro.</div>'}</div>
+                    `;
+                },
+                relatorios: () => {
+                    const months = [...new Set(state.logs.map(l => l.monthId)), getMonthId(new Date())].sort().reverse();
+                    const selectedMonth = document.getElementById('report_month')?.value || months[0];
+                    const monthOpts = months.map(m => `<option value="${m}" ${m===selectedMonth?'selected':''}>${m}</option>`).join('');
+
+                    const reportType = state.reportTab; // 'fechamento' or 'erros'
+
+                    let reportContent = '';
+                    let pdfTitle = '';
+
+                    if (reportType === 'fechamento') {
+                        pdfTitle = 'Relatório de Fechamento Financeiro';
+                        const reportData = app.calculateMonthlyReport(selectedMonth);
+                        const tableRows = reportData.map(row => `
+                            <tr class="text-sm border-b hover:bg-gray-50">
+                                <td class="px-3 py-3 font-medium text-gray-800">${row.emp.name}</td>
+                                <td class="px-3 py-3 text-gray-600">${row.sectorName}</td>
+                                <td class="px-3 py-3 text-right text-gray-500">${formatBRL(row.baseValue)}</td>
+                                <td class="px-3 py-3 text-center text-xs text-blue-600">${row.proportionMsg}</td>
+                                <td class="px-3 py-3 text-center font-bold text-red-500">${formatPct(row.totalDeductionPct)}</td>
+                                <td class="px-3 py-3 text-right font-bold text-emerald-600 bg-emerald-50/20">${formatBRL(row.finalValue)}</td>
+                            </tr>
+                        `).join('');
+
+                        reportContent = `
+                            <table class="w-full text-left whitespace-nowrap">
+                                <thead>
+                                    <tr class="bg-gray-100 text-gray-600 text-sm">
+                                        <th class="px-3 py-4 font-semibold">Colaborador</th>
+                                        <th class="px-3 py-4 font-semibold">Setor</th>
+                                        <th class="px-3 py-4 font-semibold text-right">Valor Base</th>
+                                        <th class="px-3 py-4 font-semibold text-center">Dias (Férias/Adm)</th>
+                                        <th class="px-3 py-4 font-semibold text-center">Descontos</th>
+                                        <th class="px-3 py-4 font-semibold text-right rounded-tr-xl">A RECEBER</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${tableRows || '<tr><td colspan="6" class="text-center py-10 text-gray-500">Sem dados para este mês.</td></tr>'}</tbody>
+                            </table>
+                        `;
+                    } else {
+                        pdfTitle = 'Detalhamento de Erros por Setor';
+                        reportContent = app.generateErrorLogsReportHtml(selectedMonth);
+                    }
+
+                    const logoHtml = state.settings?.logo ? `<img src="${state.settings.logo}" class="print-logo">` : `<div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 no-print"><i class="fa-solid fa-image"></i></div>`;
+
+                    return `
+                        <!-- Controles Superiores (Não imprimem) -->
+                        <div class="no-print flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
+                            <h2 class="text-2xl font-bold text-gray-800">Relatórios do RH</h2>
+                            
+                            <div class="flex space-x-3 items-center w-full md:w-auto bg-white p-2 rounded-xl shadow-sm border border-gray-100">
+                                <label class="font-semibold text-gray-600 pl-2">Mês Base:</label>
+                                <select id="report_month" onchange="app.render()" class="px-3 py-2 border-none bg-gray-50 rounded-lg font-medium outline-none focus:ring-2 focus:ring-blue-500">
+                                    ${monthOpts}
+                                </select>
+                                <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2 rounded-lg font-medium shadow-md transition-all flex items-center">
+                                    <i class="fa-solid fa-print mr-2"></i> Gerar PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Abas de Navegação dos Relatórios -->
+                        <div class="no-print flex space-x-2 mb-6 bg-gray-200 p-1 rounded-xl w-fit">
+                            <button onclick="app.setReportTab('fechamento')" class="${reportType==='fechamento'?'bg-white shadow-sm text-blue-600 font-bold':'text-gray-600 hover:text-gray-800'} px-6 py-2.5 rounded-lg transition-all">
+                                <i class="fa-solid fa-file-invoice-dollar mr-2"></i> Fechamento Financeiro
+                            </button>
+                            <button onclick="app.setReportTab('erros')" class="${reportType==='erros'?'bg-white shadow-sm text-blue-600 font-bold':'text-gray-600 hover:text-gray-800'} px-6 py-2.5 rounded-lg transition-all">
+                                <i class="fa-solid fa-clipboard-list mr-2"></i> Detalhamento de Erros
+                            </button>
+                        </div>
+
+                        <!-- Container que será Impresso (iOS Style PDF) -->
+                        <div class="print-card bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden mb-8 p-6">
+                            
+                            <!-- Print Header (Visível sempre na web, estilizado no print) -->
+                            <div class="print-header flex justify-between items-center border-b-2 border-gray-100 pb-6 mb-6">
+                                <div>
+                                    <h1 class="text-3xl font-bold text-slate-900 tracking-tight">${pdfTitle}</h1>
+                                    <p class="text-gray-500 mt-1 font-medium text-lg">Competência: <span class="text-blue-600 font-bold">${selectedMonth}</span></p>
+                                </div>
+                                <div>
+                                    ${logoHtml}
+                                </div>
+                            </div>
+
+                            <!-- Tabela ou Listagem -->
+                            <div class="overflow-x-auto print-content">
+                                ${reportContent}
+                            </div>
+                            
+                        </div>
+                    `;
+                },
+                configuracoes: () => {
+                    const currentLogo = state.settings?.logo || '';
+                    const previewHtml = currentLogo 
+                        ? `<img src="${currentLogo}" class="h-32 object-contain rounded-lg border border-gray-200 shadow-sm mb-3"><button type="button" onclick="app.removeLogo()" class="text-red-500 text-sm font-semibold hover:underline"><i class="fa-solid fa-trash mr-1"></i>Remover Logo Atual</button>`
+                        : `<div class="h-32 w-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 mb-3"><i class="fa-solid fa-image text-3xl"></i></div><p class="text-sm text-gray-500">Nenhuma logo cadastrada</p>`;
+
+                    return `
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Configurações do Sistema</h2>
+                        
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-2xl">
+                            <h3 class="text-lg font-bold text-gray-800 border-b pb-4 mb-6">Personalização de Relatórios (PDF)</h3>
+                            
+                            <form onsubmit="app.saveSettings(event)" class="space-y-6">
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-4">Logo da Empresa</label>
+                                    <div class="flex flex-col md:flex-row gap-8 items-start">
+                                        
+                                        <!-- Preview -->
+                                        <div class="flex flex-col items-center">
+                                            ${previewHtml}
+                                        </div>
+
+                                        <!-- Input Box -->
+                                        <div class="flex-1 w-full">
+                                            <label class="flex flex-col items-center px-4 py-6 bg-white text-blue rounded-xl tracking-wide uppercase border border-blue-500 cursor-pointer hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm">
+                                                <i class="fa-solid fa-cloud-arrow-up text-3xl mb-2"></i>
+                                                <span class="mt-2 text-sm leading-normal font-bold">Selecionar arquivo de imagem</span>
+                                                <input type='file' id="logo_upload" class="hidden" accept="image/*" />
+                                            </label>
+                                            <p class="text-xs text-gray-500 mt-3 text-center">Formatos suportados: PNG, JPG ou SVG.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="pt-6 border-t border-gray-100 flex justify-end">
+                                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-md transition-colors flex items-center">
+                                        <i class="fa-solid fa-save mr-2"></i> Salvar Configurações
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    `;
+                }
+            }
         };
+
+        document.addEventListener('DOMContentLoaded', initFirebase);
     </script>
 </body>
 </html>
