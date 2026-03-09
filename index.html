@@ -601,23 +601,26 @@
                             }
 
                             if (rawValor && !isNaN(rawValor) && rawValor > 0) {
-                                if (role === 'lider' && sector.val_lider !== rawValor) {
+                                if (role === 'lider' && sector.val_lider === 0) {
                                     sector.val_lider = rawValor;
                                     sectorsToSave.set(sector.id, sector);
                                 }
-                                if (role === 'liderado' && sector.val_liderado !== rawValor) {
+                                if (role === 'liderado' && sector.val_liderado === 0) {
                                     sector.val_liderado = rawValor;
                                     sectorsToSave.set(sector.id, sector);
                                 }
                             }
 
                             let emp = state.employees.find(e => e.name.toLowerCase() === rawName.toLowerCase());
+                            const finalCustomVal = (rawValor && !isNaN(rawValor) && rawValor > 0) ? rawValor : null;
+
                             if (!emp) {
                                 emp = {
                                     id: app.generateId(),
                                     name: rawName,
                                     sectorId: sector.id,
                                     role: role,
+                                    customBaseValue: finalCustomVal,
                                     active: true
                                 };
                                 employeesToSave.push(emp);
@@ -625,6 +628,7 @@
                                 let changed = false;
                                 if(emp.sectorId !== sector.id) { emp.sectorId = sector.id; changed = true; }
                                 if(emp.role !== role) { emp.role = role; changed = true; }
+                                if(emp.customBaseValue !== finalCustomVal) { emp.customBaseValue = finalCustomVal; changed = true; }
                                 if (changed) employeesToSave.push(emp);
                             }
                         }
@@ -716,10 +720,12 @@
             saveEmployee: async (e) => {
                 e.preventDefault();
                 const id = document.getElementById('emp_id').value || app.generateId();
+                const customValInput = document.getElementById('emp_custom_val').value;
                 const data = {
                     name: document.getElementById('emp_name').value,
                     sectorId: document.getElementById('emp_sector').value,
                     role: document.getElementById('emp_role').value,
+                    customBaseValue: customValInput ? Number(customValInput) : null,
                     active: true
                 };
                 if(db) await setDoc(doc(db, `artifacts/${appId}/public/data/employees`, id), data);
@@ -848,36 +854,10 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="pt-4 flex justify-end space-x-3">
-                            <button type="button" onclick="app.closeModal()" class="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium">Cancelar</button>
-                            <button type="submit" class="px-5 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium">Salvar</button>
-                        </div>
-                    </form>
-                `;
-                app.openModal(html);
-            },
-            showSectorForm: (id = null) => {
-                const sec = id ? state.sectors.find(s => s.id === id) : {};
-                const html = `
-                    <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                        <h2 class="text-xl font-bold text-gray-800">${id ? 'Editar Setor' : 'Novo Setor'}</h2>
-                        <button onclick="app.closeModal()" class="text-gray-500 hover:text-red-500"><i class="fa-solid fa-times text-xl"></i></button>
-                    </div>
-                    <form onsubmit="app.saveSector(event)" class="p-6 space-y-4">
-                        <input type="hidden" id="sec_id" value="${sec.id || ''}">
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">Nome do Setor</label>
-                            <input type="text" id="sec_name" value="${sec.name || ''}" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Valor Base Liderado (R$)</label>
-                                <input type="number" step="0.01" id="sec_val_liderado" value="${sec.val_liderado || ''}" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Valor Base Líder (R$)</label>
-                                <input type="number" step="0.01" id="sec_val_lider" value="${sec.val_lider || ''}" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
-                            </div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Valor Base Personalizado (R$)</label>
+                            <input type="number" step="0.01" id="emp_custom_val" value="${emp.customBaseValue || ''}" placeholder="Deixe em branco para usar o padrão do setor" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                            <p class="text-xs text-gray-500 mt-1">Preencha apenas se receber um valor diferente do padrão de seu cargo/setor.</p>
                         </div>
                         <div class="pt-4 flex justify-end space-x-3">
                             <button type="button" onclick="app.closeModal()" class="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium">Cancelar</button>
@@ -930,7 +910,10 @@
                     const sector = state.sectors.find(s => s.id === emp.sectorId);
                     if(!sector) return;
 
-                    const baseValue = emp.role === 'lider' ? sector.val_lider : sector.val_liderado;
+                    let baseValue = emp.role === 'lider' ? sector.val_lider : sector.val_liderado;
+                    if (emp.customBaseValue) {
+                        baseValue = Number(emp.customBaseValue);
+                    }
                     
                     const proration = state.prorations.find(p => p.employeeId === emp.id && p.monthId === monthId);
                     let validBase = baseValue;
@@ -1047,11 +1030,23 @@
                     const rows = state.employees.sort((a,b)=>a.name.localeCompare(b.name)).map(emp => {
                         const sec = state.sectors.find(s => s.id === emp.sectorId);
                         const roleName = emp.role === 'lider' ? '<span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded font-semibold">Líder</span>' : '<span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded font-semibold">Liderado</span>';
+                        
+                        let baseVal = 0;
+                        if (emp.customBaseValue) {
+                            baseVal = emp.customBaseValue;
+                        } else if (sec) {
+                            baseVal = emp.role === 'lider' ? sec.val_lider : sec.val_liderado;
+                        }
+                        const valDisplay = emp.customBaseValue 
+                            ? `<span class="text-emerald-600 font-bold" title="Valor Personalizado na Ficha">${formatBRL(baseVal)}</span>` 
+                            : `<span class="text-gray-500">${formatBRL(baseVal)}</span>`;
+
                         return `
                             <tr class="border-b hover:bg-gray-50">
                                 <td class="px-4 py-3 font-medium text-gray-800">${emp.name}</td>
                                 <td class="px-4 py-3 text-gray-600">${sec ? sec.name : 'N/A'}</td>
                                 <td class="px-4 py-3">${roleName}</td>
+                                <td class="px-4 py-3">${valDisplay}</td>
                                 <td class="px-4 py-3 text-right">
                                     <button onclick="app.showEmployeeForm('${emp.id}')" class="text-blue-500 hover:text-blue-700 mx-2"><i class="fa-solid fa-pen"></i></button>
                                     <button onclick="app.deleteEmployee('${emp.id}')" class="text-red-500 hover:text-red-700 mx-2"><i class="fa-solid fa-trash"></i></button>
@@ -1071,7 +1066,7 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"><table class="w-full text-left"><thead><tr class="bg-gray-50 text-gray-500 text-sm border-b"><th class="px-4 py-3">Nome</th><th class="px-4 py-3">Setor</th><th class="px-4 py-3">Perfil</th><th class="px-4 py-3 text-right">Ações</th></tr></thead><tbody>${rows||'<tr><td colspan="4" class="text-center py-8">Nenhum colaborador.</td></tr>'}</tbody></table></div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"><table class="w-full text-left"><thead><tr class="bg-gray-50 text-gray-500 text-sm border-b"><th class="px-4 py-3">Nome</th><th class="px-4 py-3">Setor</th><th class="px-4 py-3">Perfil</th><th class="px-4 py-3">Valor Base</th><th class="px-4 py-3 text-right">Ações</th></tr></thead><tbody>${rows||'<tr><td colspan="5" class="text-center py-8">Nenhum colaborador.</td></tr>'}</tbody></table></div>
                     `;
                 },
                 setores: () => {
