@@ -3,206 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IMAC - Controle de Qualidade</title>
+    <title>Painel IMAC - Gestão da Qualidade</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Google Fonts (Inter) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-    <!-- Configuração de cores personalizadas do Tailwind para combinar com a imagem -->
+    <!-- Configuração de Cores Customizadas (Tailwind) -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
                     colors: {
-                        imac: {
-                            yellow: '#DCA300', // Amarelo principal do cabeçalho
-                            light: '#F8F9FA', // Fundo cinza claro
-                            card: '#FFFFFF', // Fundo dos cards
-                            text: '#1E293B', // Cor principal do texto
-                            subtext: '#64748B', // Cor do texto secundário
-                            border: '#E2E8F0' // Cor das bordas
-                        }
+                        'imac-yellow': '#dca900', // Amarelo da barra superior
+                        'imac-blue': '#104ea2',   // Azul da logo
+                        'imac-text': '#1e3a8a',   // Azul escuro para textos de destaque
+                        'imac-subtext': '#64748b',
                     }
                 }
             }
         }
     </script>
 
-    <!-- Estilos base para garantir preenchimento da tela -->
     <style>
+        /* Suavização de fontes */
         body {
-            background-color: #F8F9FA;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        /* Efeito de hover suave para os cards */
-        .app-card {
-            transition: all 0.2s ease-in-out;
-        }
-        .app-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            border-color: #DCA300;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
     </style>
 </head>
-
-<body class="text-imac-text antialiased">
+<body class="bg-gray-100 min-h-screen flex flex-col font-sans">
 
     <!-- Cabeçalho Amarelo -->
     <header class="bg-imac-yellow pt-6 pb-20 px-4 md:px-8 shadow-sm">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
             
             <!-- Logo e Título -->
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-6">
                 <!-- Logo Fixa -->
-                <div class="flex items-center justify-center h-12 sm:h-16">
-                    <img src="CARINHA%20AMARELO%20E%20IMAC%20AZUL.png" alt="IMAC Logo" class="h-full w-auto object-contain drop-shadow-md">
+                <div class="flex items-center justify-center h-16 sm:h-20">
+                    <img src="CARINHA AMARELO E IMAC AZUL.png" alt="IMAC Logo" class="h-full w-auto object-contain drop-shadow-md">
                 </div>
-                <!-- Título da página -->
-                <h1 class="text-lg md:text-xl font-bold text-imac-text ml-4 hidden sm:block">Painel de Aplicativos</h1>
+                <!-- Título da página com ajuste de margem (mt-2) para alinhar visualmente com o texto da logo -->
+                <h1 class="text-xl md:text-2xl font-bold text-imac-text mt-2 hidden sm:block">Gestão da Qualidade</h1>
             </div>
+
         </div>
     </header>
 
     <!-- Conteúdo Principal -->
-    <main class="max-w-6xl mx-auto px-4 md:px-8 w-full -mt-10 flex-grow pb-12">
+    <main class="flex-grow max-w-6xl mx-auto px-4 md:px-8 w-full -mt-10 relative z-10">
         
-        <!-- Card de Progresso Removido -->
-        <!-- Campo "Usuário Atual" Removido -->
-
         <!-- Grid de Aplicativos -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
-            <!-- App 1: Start da Produção -->
-            <a href="https://qualidade-imac.github.io/StartProducao/" target="_blank" rel="noopener noreferrer" class="app-card bg-white rounded-xl border border-imac-border shadow-sm p-5 flex flex-col justify-between group cursor-pointer block h-full">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-imac-subtext group-hover:bg-imac-yellow/10 group-hover:text-imac-yellow transition-colors">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            
+            <!-- Card 1: Start da Produção -->
+            <a href="https://qualidade-imac.github.io/StartProducao/" target="_blank" class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-100 flex flex-col justify-between h-40 group">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center group-hover:bg-blue-50 group-hover:text-imac-blue transition-colors">
                         <i class="ph ph-play-circle text-2xl"></i>
                     </div>
-                    <h3 class="font-bold text-[15px] uppercase tracking-wide">Start da Produção</h3>
+                    <h2 class="font-bold text-gray-800 text-sm tracking-wide uppercase">Start da Produção</h2>
                 </div>
-                <div class="flex justify-between items-center pt-4 border-t border-gray-100">
-                    <span class="text-xs italic text-imac-subtext">Acessar sistema</span>
-                    <div class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-imac-subtext group-hover:bg-imac-yellow group-hover:text-white transition-colors">
-                        <i class="ph ph-arrow-right text-xs"></i>
+                <div class="flex items-center justify-between mt-4">
+                    <span class="text-xs font-medium text-gray-400 italic">Acessar</span>
+                    <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-blue-50 group-hover:text-imac-blue transition-colors">
+                        <i class="ph ph-arrow-right"></i>
                     </div>
                 </div>
             </a>
 
-            <!-- App 2: Relatórios de não conformidade -->
-            <a href="https://qualidade-imac.github.io/rnc-imac/" target="_blank" rel="noopener noreferrer" class="app-card bg-white rounded-xl border border-imac-border shadow-sm p-5 flex flex-col justify-between group cursor-pointer block h-full">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-imac-subtext group-hover:bg-red-50 group-hover:text-red-500 transition-colors">
-                        <i class="ph ph-warning-octagon text-2xl"></i>
+            <!-- Card 2: Relatórios de Não Conformidade -->
+            <a href="https://qualidade-imac.github.io/rnc-imac/" target="_blank" class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-100 flex flex-col justify-between h-40 group">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center group-hover:bg-blue-50 group-hover:text-imac-blue transition-colors">
+                        <i class="ph ph-warning text-2xl"></i>
                     </div>
-                    <h3 class="font-bold text-[15px] uppercase tracking-wide">Relatórios RNC</h3>
+                    <h2 class="font-bold text-gray-800 text-sm tracking-wide uppercase">Relatórios RNC</h2>
                 </div>
-                <div class="flex justify-between items-center pt-4 border-t border-gray-100">
-                    <span class="text-xs italic text-imac-subtext">Acessar sistema</span>
-                    <div class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-imac-subtext group-hover:bg-red-500 group-hover:text-white transition-colors">
-                        <i class="ph ph-arrow-right text-xs"></i>
+                <div class="flex items-center justify-between mt-4">
+                    <span class="text-xs font-medium text-gray-400 italic">Acessar</span>
+                    <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-blue-50 group-hover:text-imac-blue transition-colors">
+                        <i class="ph ph-arrow-right"></i>
                     </div>
                 </div>
             </a>
 
-            <!-- App 3: Gratificação Mensal -->
-            <a href="https://qualidade-imac.github.io/gratificacao/" target="_blank" rel="noopener noreferrer" class="app-card bg-white rounded-xl border border-imac-border shadow-sm p-5 flex flex-col justify-between group cursor-pointer block h-full">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-imac-subtext group-hover:bg-green-50 group-hover:text-green-600 transition-colors">
+            <!-- Card 3: Gratificação Mensal -->
+            <a href="https://qualidade-imac.github.io/gratificacao/" target="_blank" class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-100 flex flex-col justify-between h-40 group">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center group-hover:bg-blue-50 group-hover:text-imac-blue transition-colors">
                         <i class="ph ph-money text-2xl"></i>
                     </div>
-                    <h3 class="font-bold text-[15px] uppercase tracking-wide">Gratificação Mensal</h3>
+                    <h2 class="font-bold text-gray-800 text-sm tracking-wide uppercase">Gratificação Mensal</h2>
                 </div>
-                <div class="flex justify-between items-center pt-4 border-t border-gray-100">
-                    <span class="text-xs italic text-imac-subtext">Acessar sistema</span>
-                    <div class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-imac-subtext group-hover:bg-green-600 group-hover:text-white transition-colors">
-                        <i class="ph ph-arrow-right text-xs"></i>
+                <div class="flex items-center justify-between mt-4">
+                    <span class="text-xs font-medium text-gray-400 italic">Acessar</span>
+                    <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-blue-50 group-hover:text-imac-blue transition-colors">
+                        <i class="ph ph-arrow-right"></i>
                     </div>
                 </div>
             </a>
 
-            <!-- App 4: Checklist -->
-            <a href="https://qualidade-imac.github.io/checklistqualidade/" target="_blank" rel="noopener noreferrer" class="app-card bg-white rounded-xl border border-imac-border shadow-sm p-5 flex flex-col justify-between group cursor-pointer block h-full">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-imac-subtext group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
-                        <i class="ph ph-list-checks text-2xl"></i>
+            <!-- Card 4: Checklist -->
+            <a href="https://qualidade-imac.github.io/checklistqualidade/" target="_blank" class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-100 flex flex-col justify-between h-40 group">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center group-hover:bg-blue-50 group-hover:text-imac-blue transition-colors">
+                        <i class="ph ph-check-square-offset text-2xl"></i>
                     </div>
-                    <h3 class="font-bold text-[15px] uppercase tracking-wide">Checklist</h3>
+                    <h2 class="font-bold text-gray-800 text-sm tracking-wide uppercase">Checklist Qualidade</h2>
                 </div>
-                <div class="flex justify-between items-center pt-4 border-t border-gray-100">
-                    <span class="text-xs italic text-imac-subtext">Acessar sistema</span>
-                    <div class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-imac-subtext group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                        <i class="ph ph-arrow-right text-xs"></i>
+                <div class="flex items-center justify-between mt-4">
+                    <span class="text-xs font-medium text-gray-400 italic">Acessar</span>
+                    <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-blue-50 group-hover:text-imac-blue transition-colors">
+                        <i class="ph ph-arrow-right"></i>
                     </div>
                 </div>
             </a>
 
-            <!-- App 5: Receitas e Fichas de Custo -->
-            <a href="https://qualidade-imac.github.io/FichasdeCusto/" target="_blank" rel="noopener noreferrer" class="app-card bg-white rounded-xl border border-imac-border shadow-sm p-5 flex flex-col justify-between group cursor-pointer block h-full">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-imac-subtext group-hover:bg-orange-50 group-hover:text-orange-500 transition-colors">
+            <!-- Card 5: Receitas e Fichas de Custo -->
+            <a href="https://qualidade-imac.github.io/FichasdeCusto/" target="_blank" class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-100 flex flex-col justify-between h-40 group">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center group-hover:bg-blue-50 group-hover:text-imac-blue transition-colors">
                         <i class="ph ph-receipt text-2xl"></i>
                     </div>
-                    <h3 class="font-bold text-[15px] uppercase tracking-wide">Fichas de Custo</h3>
+                    <h2 class="font-bold text-gray-800 text-sm tracking-wide uppercase">Receitas e Custos</h2>
                 </div>
-                <div class="flex justify-between items-center pt-4 border-t border-gray-100">
-                    <span class="text-xs italic text-imac-subtext">Acessar sistema</span>
-                    <div class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-imac-subtext group-hover:bg-orange-500 group-hover:text-white transition-colors">
-                        <i class="ph ph-arrow-right text-xs"></i>
+                <div class="flex items-center justify-between mt-4">
+                    <span class="text-xs font-medium text-gray-400 italic">Acessar</span>
+                    <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-blue-50 group-hover:text-imac-blue transition-colors">
+                        <i class="ph ph-arrow-right"></i>
                     </div>
                 </div>
             </a>
 
-            <!-- App 6: Formulário de desvio da qualidade (Google Forms) -->
-            <!-- Destaque especial neste card para mostrar como ficaria um estado diferente (similar ao "Estoque" na imagem) -->
-            <a href="https://forms.gle/ie1sJYW9EwmbrZTy6" target="_blank" rel="noopener noreferrer" class="app-card bg-white rounded-xl border-2 border-imac-yellow shadow-md p-5 flex flex-col justify-between group cursor-pointer block h-full">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="w-12 h-12 rounded-full bg-yellow-50 flex items-center justify-center text-imac-yellow">
-                        <i class="ph ph-clipboard-text text-2xl"></i>
+            <!-- Card 6: Formulário de Desvio -->
+            <a href="https://forms.gle/ie1sJYW9EwmbrZTy6" target="_blank" class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-100 flex flex-col justify-between h-40 group">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center group-hover:bg-blue-50 group-hover:text-imac-blue transition-colors">
+                        <i class="ph ph-warning-circle text-2xl"></i>
                     </div>
-                    <h3 class="font-bold text-[15px] uppercase tracking-wide">Desvio da Qualidade</h3>
+                    <h2 class="font-bold text-gray-800 text-sm tracking-wide uppercase">Formulário de Desvio</h2>
                 </div>
-                <div class="flex justify-between items-center pt-4 border-t border-gray-100">
-                    <div class="flex flex-col">
-                        <span class="text-xs font-bold text-imac-yellow mb-1">Formulário Externo</span>
-                        <div class="flex text-imac-yellow text-xs">
-                           <i class="ph-fill ph-star"></i>
-                           <i class="ph-fill ph-star"></i>
-                           <i class="ph-fill ph-star"></i>
-                           <i class="ph-fill ph-star"></i>
-                           <i class="ph ph-star"></i>
-                        </div>
+                <div class="flex items-center justify-between mt-4">
+                    <span class="text-xs font-medium text-gray-400 italic">Acessar</span>
+                    <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-blue-50 group-hover:text-imac-blue transition-colors">
+                        <i class="ph ph-arrow-right"></i>
                     </div>
-                    <span class="bg-yellow-100 text-imac-yellow text-[10px] font-bold px-2 py-1 rounded uppercase">Abrir Form</span>
                 </div>
             </a>
 
-            <!-- App 7: Gestão de IT -->
-            <a href="https://qualidade-imac.github.io/it-s-imac/" target="_blank" rel="noopener noreferrer" class="app-card bg-white rounded-xl border border-imac-border shadow-sm p-5 flex flex-col justify-between group cursor-pointer block h-full">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-imac-subtext group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
+            <!-- Card 7: Gestão de IT -->
+            <a href="https://qualidade-imac.github.io/it-s-imac/" target="_blank" class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-100 flex flex-col justify-between h-40 group">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center group-hover:bg-blue-50 group-hover:text-imac-blue transition-colors">
                         <i class="ph ph-desktop text-2xl"></i>
                     </div>
-                    <h3 class="font-bold text-[15px] uppercase tracking-wide">Gestão de IT</h3>
+                    <h2 class="font-bold text-gray-800 text-sm tracking-wide uppercase">Gestão de IT</h2>
                 </div>
-                <div class="flex justify-between items-center pt-4 border-t border-gray-100">
-                    <span class="text-xs italic text-imac-subtext">Acessar sistema</span>
-                    <div class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-imac-subtext group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                        <i class="ph ph-arrow-right text-xs"></i>
+                <div class="flex items-center justify-between mt-4">
+                    <span class="text-xs font-medium text-gray-400 italic">Acessar</span>
+                    <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-blue-50 group-hover:text-imac-blue transition-colors">
+                        <i class="ph ph-arrow-right"></i>
                     </div>
                 </div>
             </a>
@@ -212,7 +177,7 @@
 
     <!-- Rodapé -->
     <footer class="mt-auto py-6 text-center text-sm text-imac-subtext">
-        <p>&copy; <span id="year"></span> Sistema de Gestão da Qualidade.</p>
+        <p>&copy; <span id="year"></span> Sistema de Gestão da Qualidade IMAC.</p>
     </footer>
 
     <!-- Script de Lógica -->
