@@ -68,19 +68,12 @@
             
             <!-- Logo e Título -->
             <div class="flex items-center gap-4">
-                <!-- Área da Logo Dinâmica -->
-                <div id="logoContainer" class="flex flex-col items-center justify-center bg-white p-2 rounded-lg shadow-sm w-16 h-16 cursor-pointer" onclick="openConfigModal()" title="Clique para alterar a logo">
-                    <!-- A imagem ou texto padrão será renderizado via JS -->
+                <!-- Logo Fixa -->
+                <div class="flex items-center justify-center h-12 sm:h-16">
+                    <img src="CARINHA%20AMARELO%20E%20IMAC%20AZUL.png" alt="IMAC Logo" class="h-full w-auto object-contain drop-shadow-md">
                 </div>
                 <!-- Título da página -->
                 <h1 class="text-lg md:text-xl font-bold text-imac-text ml-4 hidden sm:block">Painel de Aplicativos</h1>
-            </div>
-
-            <!-- Botões Superiores (Apenas Configurações) -->
-            <div class="flex gap-3">
-                <button onclick="openConfigModal()" class="w-10 h-10 rounded-full bg-black/5 hover:bg-black/10 flex items-center justify-center transition-colors text-imac-text" title="Configurações">
-                    <i class="ph ph-gear text-xl"></i>
-                </button>
             </div>
         </div>
     </header>
@@ -198,6 +191,22 @@
                 </div>
             </a>
 
+            <!-- App 7: Gestão de IT -->
+            <a href="https://qualidade-imac.github.io/it-s-imac/" target="_blank" rel="noopener noreferrer" class="app-card bg-white rounded-xl border border-imac-border shadow-sm p-5 flex flex-col justify-between group cursor-pointer block h-full">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-imac-subtext group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
+                        <i class="ph ph-desktop text-2xl"></i>
+                    </div>
+                    <h3 class="font-bold text-[15px] uppercase tracking-wide">Gestão de IT</h3>
+                </div>
+                <div class="flex justify-between items-center pt-4 border-t border-gray-100">
+                    <span class="text-xs italic text-imac-subtext">Acessar sistema</span>
+                    <div class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-imac-subtext group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                        <i class="ph ph-arrow-right text-xs"></i>
+                    </div>
+                </div>
+            </a>
+
         </div>
     </main>
 
@@ -206,159 +215,10 @@
         <p>&copy; <span id="year"></span> Sistema de Gestão da Qualidade.</p>
     </footer>
 
-    <!-- Modal de Configurações -->
-    <div id="configModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md transform transition-all">
-            <div class="flex justify-between items-center mb-4 border-b pb-2">
-                <h2 class="text-xl font-bold text-imac-text">Configurações</h2>
-                <button onclick="closeConfigModal()" class="text-imac-subtext hover:text-imac-text">
-                    <i class="ph ph-x text-xl"></i>
-                </button>
-            </div>
-            
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-imac-text mb-2">Logo da Empresa</label>
-                    <div class="flex items-center gap-4">
-                        <div id="previewLogoModal" class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 overflow-hidden">
-                            <i class="ph ph-image text-gray-400 text-2xl"></i>
-                        </div>
-                        <div class="flex-1">
-                            <input type="file" id="logoUpload" accept="image/*" class="hidden" onchange="handleLogoUpload(event)">
-                            <label for="logoUpload" class="cursor-pointer bg-imac-yellow text-imac-text px-4 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-500 transition-colors inline-block">
-                                Escolher Imagem
-                            </label>
-                            <p class="text-xs text-imac-subtext mt-1">Recomendado: Imagem quadrada, máx 2MB.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="pt-4 flex justify-between items-center">
-                     <button onclick="resetLogo()" class="text-xs text-red-500 hover:underline">Restaurar Logo Padrão</button>
-                     <button onclick="saveConfig()" class="bg-imac-text text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-gray-800 transition-colors">
-                        Salvar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Script de Lógica -->
     <script>
         // Define o ano atual no rodapé
         document.getElementById('year').textContent = new Date().getFullYear();
-
-        // Elementos do Modal
-        const configModal = document.getElementById('configModal');
-        const logoUploadInput = document.getElementById('logoUpload');
-        const logoContainer = document.getElementById('logoContainer');
-        const previewLogoModal = document.getElementById('previewLogoModal');
-
-        // Estado da aplicação (Logo atual)
-        let currentLogoBase64 = localStorage.getItem('appLogoBase64');
-
-        // HTML da Logo Padrão (Texto "IMAC")
-        const defaultLogoHTML = `
-            <span class="text-xl font-extrabold text-imac-text leading-tight tracking-tighter">IMAC</span>
-            <span class="text-[0.4rem] font-bold text-imac-text uppercase tracking-wider">CQ</span>
-        `;
-
-        // Função para carregar a logo ao iniciar a página
-        function renderLogo() {
-            if (currentLogoBase64) {
-                // Se tem imagem no localStorage, mostra a imagem
-                logoContainer.innerHTML = `<img src="${currentLogoBase64}" alt="Logo da Empresa" class="w-full h-full object-contain">`;
-                previewLogoModal.innerHTML = `<img src="${currentLogoBase64}" class="w-full h-full object-contain">`;
-            } else {
-                // Se não tem, mostra a logo padrão de texto
-                logoContainer.innerHTML = defaultLogoHTML;
-                previewLogoModal.innerHTML = `<i class="ph ph-image text-gray-400 text-2xl"></i>`;
-            }
-        }
-
-        // --- Funções do Modal ---
-
-        function openConfigModal() {
-            configModal.classList.remove('hidden');
-            configModal.classList.add('flex');
-            // Atualiza o preview no modal com a logo atual
-            if (currentLogoBase64) {
-                 previewLogoModal.innerHTML = `<img src="${currentLogoBase64}" class="w-full h-full object-contain">`;
-            } else {
-                 previewLogoModal.innerHTML = `<i class="ph ph-image text-gray-400 text-2xl"></i>`;
-            }
-        }
-
-        function closeConfigModal() {
-            configModal.classList.add('hidden');
-            configModal.classList.remove('flex');
-            // Limpa o input de arquivo ao fechar sem salvar
-            logoUploadInput.value = '';
-        }
-
-        // Lidar com o upload do arquivo
-        function handleLogoUpload(event) {
-            const file = event.target.files[0];
-            
-            if (file) {
-                // Verifica o tamanho do arquivo (ex: máximo 2MB)
-                if (file.size > 2 * 1024 * 1024) {
-                    alert('Por favor, selecione uma imagem menor que 2MB.');
-                    return;
-                }
-
-                const reader = new FileReader();
-                
-                // Quando a imagem for lida e convertida para Base64
-                reader.onload = function(e) {
-                    const base64String = e.target.result;
-                    // Mostra no preview do modal
-                    previewLogoModal.innerHTML = `<img src="${base64String}" class="w-full h-full object-contain">`;
-                    // Guarda temporariamente até o usuário clicar em "Salvar"
-                    logoUploadInput.dataset.tempBase64 = base64String;
-                };
-                
-                // Inicia a leitura do arquivo
-                reader.readAsDataURL(file);
-            }
-        }
-
-        // Salvar as configurações (aplica a nova logo)
-        function saveConfig() {
-            const tempBase64 = logoUploadInput.dataset.tempBase64;
-            
-            if (tempBase64) {
-                // Salva no localStorage
-                localStorage.setItem('appLogoBase64', tempBase64);
-                currentLogoBase64 = tempBase64;
-                renderLogo();
-                // Limpa o dado temporário
-                delete logoUploadInput.dataset.tempBase64;
-            }
-            
-            closeConfigModal();
-        }
-
-        // Restaurar logo padrão
-        function resetLogo() {
-            if (confirm('Tem certeza que deseja remover a logo personalizada?')) {
-                localStorage.removeItem('appLogoBase64');
-                currentLogoBase64 = null;
-                renderLogo();
-                closeConfigModal();
-            }
-        }
-
-        // Fechar modal ao clicar fora dele
-        configModal.addEventListener('click', function(e) {
-            if (e.target === configModal) {
-                closeConfigModal();
-            }
-        });
-
-        // Inicializa a logo ao carregar a página
-        renderLogo();
-
     </script>
 </body>
 </html>
