@@ -5,13 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel IMAC - Gestão da Qualidade</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-    <!-- Configuração de Cores Customizadas (Tailwind) -->
     <script>
         tailwind.config = {
             theme: {
@@ -56,29 +53,21 @@
 </head>
 <body class="bg-imac-bg text-gray-800 font-sans h-screen flex overflow-hidden">
 
-    <!-- Área Principal (Conteúdo) -->
     <div class="flex-1 flex flex-col overflow-hidden relative">
         
-        <!-- Barra Superior (Topbar) -->
         <header class="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-6 md:px-10 flex-shrink-0 z-10 shadow-sm">
             <div class="flex items-center gap-4">
-                <!-- Logo -->
                 <img src="CARINHA AMARELO E IMAC AZUL.png" alt="IMAC Logo" class="h-8 md:h-10 w-auto" onerror="this.src='https://placehold.co/120x40/ffffff/104ea2?text=IMAC+Logo'">
                 
-                <!-- Título da Página com peso forte como no print ("Novo Start de Produção") -->
                 <h1 class="text-xl md:text-2xl font-black text-imac-text tracking-tight">Gestão da Qualidade</h1>
             </div>
         </header>
 
-        <!-- Área Rolável de Conteúdo -->
         <main class="flex-1 overflow-y-auto p-6 md:p-10 w-full">
             
-            <!-- Grid de Aplicativos (Mantendo estrutura e links, mas com o visual dos painéis do print) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
                 
-                <!-- Card 1: Start da Produção -->
                 <a href="https://qualidade-imac.github.io/StartProducao/" target="_blank" class="bg-white rounded-xl border border-gray-200 p-6 flex flex-col justify-between h-40 hover:border-imac-yellow hover:shadow-md transition-all group relative overflow-hidden">
-                    <!-- Detalhe lateral no hover -->
                     <div class="absolute left-0 top-0 bottom-0 w-1 bg-imac-yellow opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     
                     <div class="flex items-center gap-3">
@@ -93,7 +82,6 @@
                     </div>
                 </a>
 
-                <!-- Card 2: Relatórios de Não Conformidade -->
                 <a href="https://qualidade-imac.github.io/rnc-imac/" target="_blank" class="bg-white rounded-xl border border-gray-200 p-6 flex flex-col justify-between h-40 hover:border-imac-yellow hover:shadow-md transition-all group relative overflow-hidden">
                     <div class="absolute left-0 top-0 bottom-0 w-1 bg-imac-yellow opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     
@@ -109,7 +97,6 @@
                     </div>
                 </a>
 
-                <!-- Card 3: Gratificação Mensal -->
                 <a href="https://qualidade-imac.github.io/gratificacao/" target="_blank" class="bg-white rounded-xl border border-gray-200 p-6 flex flex-col justify-between h-40 hover:border-imac-yellow hover:shadow-md transition-all group relative overflow-hidden">
                     <div class="absolute left-0 top-0 bottom-0 w-1 bg-imac-yellow opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     
@@ -125,7 +112,6 @@
                     </div>
                 </a>
 
-                <!-- Card 4: Checklist -->
                 <a href="https://qualidade-imac.github.io/checklistqualidade/" target="_blank" class="bg-white rounded-xl border border-gray-200 p-6 flex flex-col justify-between h-40 hover:border-imac-yellow hover:shadow-md transition-all group relative overflow-hidden">
                     <div class="absolute left-0 top-0 bottom-0 w-1 bg-imac-yellow opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     
@@ -141,7 +127,6 @@
                     </div>
                 </a>
 
-                <!-- Card 5: Receitas e Fichas de Custo -->
                 <a href="https://qualidade-imac.github.io/FichasdeCusto/" target="_blank" class="bg-white rounded-xl border border-gray-200 p-6 flex flex-col justify-between h-40 hover:border-imac-yellow hover:shadow-md transition-all group relative overflow-hidden">
                     <div class="absolute left-0 top-0 bottom-0 w-1 bg-imac-yellow opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     
@@ -157,7 +142,6 @@
                     </div>
                 </a>
 
-                <!-- Card 6: Formulário de Desvio -->
                 <a href="https://forms.gle/ie1sJYW9EwmbrZTy6" target="_blank" class="bg-white rounded-xl border border-gray-200 p-6 flex flex-col justify-between h-40 hover:border-imac-yellow hover:shadow-md transition-all group relative overflow-hidden">
                     <div class="absolute left-0 top-0 bottom-0 w-1 bg-imac-yellow opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     
@@ -173,7 +157,6 @@
                     </div>
                 </a>
 
-                <!-- Card 7: Gestão de IT -->
                 <a href="https://qualidade-imac.github.io/it-s-imac/" target="_blank" class="bg-white rounded-xl border border-gray-200 p-6 flex flex-col justify-between h-40 hover:border-imac-yellow hover:shadow-md transition-all group relative overflow-hidden">
                     <div class="absolute left-0 top-0 bottom-0 w-1 bg-imac-yellow opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     
@@ -189,9 +172,23 @@
                     </div>
                 </a>
 
+                <a href="https://qualidade-imac.github.io/qualificacaofornecedores/" target="_blank" class="bg-white rounded-xl border border-gray-200 p-6 flex flex-col justify-between h-40 hover:border-imac-yellow hover:shadow-md transition-all group relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-imac-yellow opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    
+                    <div class="flex items-center gap-3">
+                        <i class="ph ph-handshake text-2xl text-gray-400 group-hover:text-imac-yellow transition-colors"></i>
+                        <h2 class="font-extrabold text-gray-900 text-sm uppercase tracking-wide">Qualificação Fornecedores</h2>
+                    </div>
+                    <div class="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
+                        <span class="text-xs font-bold text-gray-400 group-hover:text-imac-yellow transition-colors uppercase tracking-wider">Acessar</span>
+                        <div class="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-yellow-50 group-hover:text-imac-yellow transition-colors">
+                            <i class="ph ph-arrow-right font-bold"></i>
+                        </div>
+                    </div>
+                </a>
+
             </div>
 
-            <!-- Rodapé (Mantido) -->
             <footer class="mt-12 py-6 text-center text-sm text-imac-subtext font-medium border-t border-gray-200 max-w-7xl mx-auto">
                 <p>&copy; <span id="year"></span> Sistema de Gestão da Qualidade IMAC.</p>
             </footer>
@@ -199,7 +196,6 @@
         </main>
     </div>
 
-    <!-- Script de Lógica -->
     <script>
         // Define o ano atual no rodapé
         document.getElementById('year').textContent = new Date().getFullYear();
